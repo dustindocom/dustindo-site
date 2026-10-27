@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<title>Dustin Do logo</title>
+<rect x="2" y="2" width="60" height="60" rx="14" fill="#2b1d14"/>
+<path d="M16 16h13a16 16 0 0 1 0 32H16z" fill="none" stroke="#d5b399" stroke-width="5" stroke-linejoin="round"/>
+<path d="M36 16h6a16 16 0 0 1 0 32h-6" fill="none" stroke="#d5b399" stroke-width="5" stroke-linejoin="round" opacity=".55"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000">
+<title>Project two</title>
+<rect width="1600" height="1000" fill="#d3a84f"/>
+<rect x="470" y="220" width="660" height="560" rx="28" fill="#fff6dd" opacity=".7"/><rect x="560" y="320" width="300" height="360" fill="#2b1d14" opacity=".85"/><rect x="900" y="320" width="140" height="170" fill="#8fa58f"/><rect x="900" y="520" width="140" height="160" fill="#7d97b3"/>
+<text x="800" y="940" text-anchor="middle" font-family="sans-serif" font-size="26" fill="#2b1d14" opacity=".7">Project two: replace with your image (1600 x 1000)</text>
+</svg>

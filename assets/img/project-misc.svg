@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000">
+<title>Misc</title>
+<rect width="1600" height="1000" fill="#9b7b9a"/>
+<g fill="#f3e9f2" opacity=".7"><rect x="420" y="260" width="240" height="240" rx="20"/><rect x="700" y="260" width="240" height="240" rx="120"/><rect x="980" y="260" width="200" height="240" rx="20"/></g><g fill="#2b1d14" opacity=".85"><rect x="420" y="540" width="520" height="200" rx="20"/><circle cx="1080" cy="640" r="100"/></g>
+<text x="800" y="940" text-anchor="middle" font-family="sans-serif" font-size="26" fill="#2b1d14" opacity=".7">Misc: replace with your image (1600 x 1000)</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480">
+<filter id="n" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="3" stitchTiles="stitch"/>
+<feColorMatrix values="0 0 0 0 .17  0 0 0 0 .11  0 0 0 0 .08  0 0 0 .55 0"/></filter>
+<filter id="f" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".012 .22" numOctaves="2" seed="4" stitchTiles="stitch"/>
+<feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .35 -.1"/></filter>
+<rect width="480" height="480" filter="url(#n)" opacity=".5"/>
+<rect width="480" height="480" filter="url(#f)" opacity=".6"/>
+</svg>

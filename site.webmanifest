@@ -1,0 +1,9 @@
+{
+  "name": "Dustin Do",
+  "short_name": "Dustin Do",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#ece3da",
+  "theme_color": "#d5b399",
+  "icons": [{"src": "assets/img/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+}

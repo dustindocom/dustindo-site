@@ -1,0 +1,300 @@
+/* =====================================================================
+   DUSTIN DO: SITE STYLES
+   Everything you are likely to edit is in the :root block below.
+   No internet is needed: there are no web fonts, CDNs or frameworks.
+   ===================================================================== */
+
+:root {
+  /* ---- colors ---- */
+  --bg: #ece3da;            /* page background (stretches full window width) */
+  --ink: #2b1d14;           /* main text */
+  --ink-soft: #5b4636;      /* secondary text */
+  --nav-bg: #d5b399;        /* navigation bar color */
+  --footer-bg: #2a1c13;     /* dark brown footer */
+  --footer-ink: #eadfd2;
+  --hero-bg: #d9c4b0;       /* must match the outer edge color of your hero image */
+
+  /* ---- content width ----
+     Colors run edge to edge, but content never gets wider than this.
+     1600 px means images only ever need to be 1600 px wide (3200 px if you
+     want them razor sharp on retina screens). On 1080p, 2K and 4K screens the
+     extra space is filled with color, never with stretched images. */
+  --content: 1600px;
+  --gutter: clamp(16px, 4vw, 64px);
+
+  /* ---- type (system fonts so it works offline) ----
+     To use your own font: put .woff2 files in assets/fonts/ and add an
+     @font-face rule at the bottom of this file, then put its name first here. */
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --header-h: 74px;         /* height of the floating nav area */
+  --tab-h: 40px;            /* height of a binder tab */
+  --lip: 12px;              /* colored edge of each divider when closed */
+  --ease: cubic-bezier(.22, .8, .2, 1);
+}
+
+/* ---------- base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: clip; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: inherit; text-underline-offset: 0.2em; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 .5em; }
+p { margin: 0 0 1em; max-width: 68ch; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+::selection { background: var(--nav-bg); }
+
+.skip-link { position: absolute; left: 12px; top: -80px; z-index: 200; background: var(--ink); color: #fff; padding: .6em 1em; border-radius: 8px; }
+.skip-link:focus { top: 12px; }
+
+/* Images with a focal point. --fx/--fy = pixel position in the image that stays
+   near the middle as the frame changes shape. --iw/--ih = image pixel size. */
+.focal {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: calc(var(--fx) / var(--iw) * 100%) calc(var(--fy) / var(--ih) * 100%);
+}
+
+.button {
+  display: inline-block; padding: .7em 1.3em; border-radius: 999px;
+  background: var(--ink); color: #fff; text-decoration: none; font-weight: 600;
+  transition: transform .2s var(--ease), background .2s;
+}
+.button:hover { transform: translateY(-2px); background: #46301f; }
+
+/* ---------- navigation (sticky) ---------- */
+.site-header { position: sticky; top: 0; z-index: 100; height: var(--header-h); padding: 12px 12px 0; pointer-events: none; }
+.site-nav {
+  pointer-events: auto;
+  max-width: var(--content); margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 16px;
+  min-height: calc(var(--header-h) - 12px);
+  border: 1px solid #fff;
+  border-radius: 14px;
+  background-color: rgba(213, 179, 153, 0.8);   /* #d5b399 at 80% */
+  -webkit-backdrop-filter: grayscale(82%);
+  backdrop-filter: grayscale(82%);
+}
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; }
+.brand img { border-radius: 10px; }
+.site-nav__links { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(14px, 3vw, 40px); }
+.site-nav__links a { text-decoration: none; padding: .5em .2em; font-weight: 500; border-bottom: 2px solid transparent; }
+.site-nav__links a:hover, .site-nav a[aria-current="page"] { border-bottom-color: var(--ink); }
+.brand[aria-current="page"] { border-bottom: 0; }
+@media (max-width: 480px) {
+  .brand__text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* logo only, still readable by screen readers */
+  .site-nav { padding: 6px 12px; }
+}
+
+/* ---------- home: pinned stage (hero + binder dividers) ----------
+   The .runway is a tall block. Inside it the .stage stays pinned to the window
+   while you scroll through the runway. site.js turns scroll position into a
+   number (--t, 0 to 1) on each divider, and the divider slides up by that much.
+   When the runway ends the stage lets go and the footer scrolls in. */
+.runway {
+  --step: max(380px, 55svh);                       /* scroll distance per divider */
+  position: relative;
+  height: calc(100svh + 4 * var(--step));
+  margin-top: calc(-1 * var(--header-h));          /* hero runs under the floating nav */
+}
+.stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: var(--hero-bg); }
+
+.hero { position: absolute; inset: 0; transform: translateY(var(--hy, 0px)); }   /* drifts up at half speed */
+.hero__box {
+  position: relative; height: 100%; max-height: 900px;   /* image never grows taller than its real size */
+  max-width: var(--content); margin: 0 auto;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 90px), transparent);
+          mask-image: linear-gradient(180deg, #000 calc(100% - 90px), transparent);
+}
+/* very wide windows: image edges dissolve into the hero color instead of stretching */
+@media (min-width: 1700px) {
+  .hero__box {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent), linear-gradient(180deg, #000 calc(100% - 90px), transparent);
+    -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent), linear-gradient(180deg, #000 calc(100% - 90px), transparent);
+            mask-composite: intersect;
+  }
+}
+.hero__text { position: absolute; left: var(--gutter); bottom: calc(var(--tab-h) + 4 * (var(--lip) + 1px) + 32px); }
+.hero__text h1 { font-size: clamp(2.6rem, 7vw, 6rem); margin: 0; }
+.hero__text p { margin: .25em 0 0; font-size: clamp(1.05rem, 2vw, 1.5rem); color: var(--ink-soft); }
+
+/* Each divider is a sheet: a colored edge (with its tab) and its content fixed beneath it.
+   The sheets start tucked at the bottom of the window. Scrolling lifts them one pixel per
+   pixel, so there is no dead space. When a sheet reaches the nav it docks there and stays,
+   content and all, and the sheets below keep rising and slide over it, one after another.
+   (site.js does the arithmetic; this CSS only draws the result.) */
+.stack { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+
+.sheet {
+  position: absolute; left: 0; right: 0; top: 0; z-index: var(--i);   /* later sheets sit on top of earlier ones */
+  transform: translateY(var(--y, 100svh));                          /* set by site.js */
+  pointer-events: auto;
+  background: var(--c);                             /* color stretches the full window width */
+  border-top: 1px solid rgba(255, 255, 255, .5);
+  padding-top: var(--lip);                          /* the colored edge you see when closed or docked */
+  box-shadow: 0 -4px 10px rgba(43, 29, 20, .2);
+}
+
+/* tabs: one row across the content width, four equal slots. site.js lowers each tab to
+   the top of its divider, and docks it under the nav once the divider has scrolled up. */
+.tabrail {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 20; height: 0;
+  max-width: var(--content); margin: 0 auto; padding: 0 var(--gutter);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  pointer-events: none;
+}
+.sheet__tab {
+  grid-column: var(--col); grid-row: 1; pointer-events: auto;
+  transform: translateY(var(--ty, 100svh));         /* set by site.js */
+  height: var(--tab-h); margin: 0 4px;
+  font: 600 1.05rem/1 var(--font-display); color: var(--ink);
+  background: var(--c);
+  border: 1px solid rgba(255, 255, 255, .55); border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -2px 6px rgba(43, 29, 20, .18);
+  cursor: pointer;
+  transition: translate .2s var(--ease), filter .2s;
+}
+.sheet__tab:hover { translate: 0 -3px; filter: brightness(1.06); }
+
+/* the content is exactly as tall as it is; it never scrolls inside itself */
+.sheet.is-closed .sheet__body { visibility: hidden; }
+.sheet__inner {
+  position: relative;
+  max-width: var(--content); margin: 0 auto;
+  padding: clamp(20px, 3vw, 48px) var(--gutter);
+  display: grid; gap: clamp(14px, 3vw, 48px); align-items: center;
+}
+/* paper texture sits on top of the color */
+.sheet__inner::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+  background-image: url("../img/paper.svg"); background-size: 480px 480px;
+  mix-blend-mode: multiply; opacity: .55;
+}
+.sheet__figure { margin: 0; position: relative; z-index: 1; aspect-ratio: 16 / 10; max-height: 60svh; width: 100%; overflow: hidden; border-radius: 6px; box-shadow: 0 10px 30px rgba(43, 29, 20, .3); }
+.sheet__copy { position: relative; z-index: 4; }
+.sheet__copy h2 { font-size: clamp(1.6rem, 3vw, 2.6rem); }
+
+@media (min-width: 900px) {
+  .sheet__inner { grid-template-columns: minmax(0, 1fr) minmax(260px, 360px); padding-left: calc(var(--gutter) + 40px); }
+  /* punched binder holes down the left edge (desktop only) */
+  .sheet__inner::after {
+    content: ""; position: absolute; left: 22px; top: 0; bottom: 0; width: 24px; pointer-events: none; z-index: 3;
+    background:
+      radial-gradient(circle at 12px 18%, rgba(43,29,20,.35) 0 8px, rgba(255,255,255,.4) 9px 10px, transparent 11px),
+      radial-gradient(circle at 12px 50%, rgba(43,29,20,.35) 0 8px, rgba(255,255,255,.4) 9px 10px, transparent 11px),
+      radial-gradient(circle at 12px 82%, rgba(43,29,20,.35) 0 8px, rgba(255,255,255,.4) 9px 10px, transparent 11px);
+  }
+}
+/* very wide windows: paper and holes fade into the solid color */
+@media (min-width: 1700px) {
+  .sheet__inner::before, .sheet__inner::after {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  }
+}
+@media (max-width: 899px) { .sheet__tab { margin: 0 2px; font-size: .95rem; } }
+
+/* no JavaScript: hero, then the dividers stacked open one after another */
+.no-js .runway { height: auto; margin-top: 0; }
+.no-js .stage { position: static; height: auto; overflow: visible; }
+.no-js .hero { position: relative; height: 70svh; }
+.no-js .stack { position: static; }
+.no-js .sheet { position: relative; transform: none; }
+.no-js .hero { transform: none; }
+.no-js .sheet { margin-top: var(--tab-h); }
+.no-js .tabrail { display: none; }
+.no-js .fold-back { display: none; }
+
+/* ---------- inner pages ---------- */
+.page { max-width: var(--content); margin: 0 auto; padding: clamp(32px, 6vw, 96px) var(--gutter); }
+.page--narrow { max-width: 900px; }
+.page__head h1 { font-size: clamp(2.4rem, 6vw, 4.5rem); }
+.page__head p { font-size: 1.15em; color: var(--ink-soft); }
+.crumbs { font-size: .9rem; color: var(--ink-soft); }
+.prose h2 { font-size: clamp(1.4rem, 2.4vw, 2rem); margin-top: 1.6em; }
+.prose ul { padding-left: 1.2em; }
+
+.work { display: grid; gap: clamp(16px, 3vw, 48px); align-items: center; padding: clamp(24px, 4vw, 56px) 0; border-top: 1px solid rgba(43, 29, 20, .2); }
+.work__figure { display: block; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 8px; background: var(--c); }
+.work__copy h2 { font-size: clamp(1.6rem, 3vw, 2.6rem); }
+.work__copy h2 a { text-decoration: none; }
+@media (min-width: 900px) {
+  .work { grid-template-columns: 1.6fr 1fr; }
+  .work--flip .work__figure { order: 2; }
+}
+
+.project__hero { margin: 0 0 24px; aspect-ratio: 16 / 9; max-height: 80svh; overflow: hidden; border-radius: 8px; background: var(--c); }
+.project__meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 0 0 clamp(24px, 4vw, 56px); padding: 16px 0; border-block: 1px solid rgba(43, 29, 20, .2); }
+.project__meta dt { font-size: .85rem; color: var(--ink-soft); }
+.project__meta dd { margin: 0; font-weight: 600; }
+.project__pager { display: flex; justify-content: space-between; gap: 16px; margin-top: clamp(32px, 6vw, 80px); padding-top: 24px; border-top: 1px solid rgba(43, 29, 20, .2); font: 600 1.4rem var(--font-display); }
+.project__pager a { text-decoration: none; display: block; }
+.project__pager span { display: block; font: 400 .85rem var(--font-body); color: var(--ink-soft); }
+.project__pager a[rel="next"] { text-align: right; }
+
+.about { display: grid; gap: clamp(20px, 4vw, 64px); }
+.about__portrait { margin: 0; aspect-ratio: 4 / 5; max-width: 420px; overflow: hidden; border-radius: 8px; }
+@media (min-width: 900px) { .about { grid-template-columns: minmax(260px, 420px) 1fr; align-items: start; } }
+
+/* ---------- footer ---------- */
+.site-footer { background: var(--footer-bg); color: var(--footer-ink); }
+.site-footer a { color: inherit; }
+.site-footer__inner {
+  max-width: var(--content); margin: 0 auto;
+  padding: clamp(40px, 6vw, 88px) var(--gutter) 32px;
+  display: grid; gap: 32px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.site-footer__name { font: 600 1.6rem var(--font-display); margin: 12px 0 0; }
+.site-footer__heading { font: 600 1rem var(--font-body); margin: 0 0 .8em; opacity: .7; }
+.site-footer ul { list-style: none; margin: 0; padding: 0; }
+.site-footer li { margin-bottom: .5em; }
+.site-footer__legal {
+  max-width: var(--content); margin: 0 auto;
+  padding: 24px var(--gutter) max(32px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(234, 223, 210, .2);
+  font-size: .85rem; opacity: .85;
+}
+.site-footer__legal p { margin: 0 0 .5em; max-width: 90ch; }
+.to-top { margin-left: 1.5em; }
+
+/* ---------- landscape phones: short screens ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root { --header-h: 56px; --tab-h: 32px; --lip: 8px; }
+  .brand img { width: 32px; height: 32px; }
+  .site-nav { padding: 4px 12px; }
+  .sheet__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 14px; padding-bottom: 14px; }
+  .sheet__figure { max-height: 50svh; }
+  .hero__text h1 { font-size: 2.2rem; }
+}
+
+/* ---------- accessibility + print ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; transition-delay: 0s !important; animation: none !important; }
+}
+@media print {
+  .site-header, .skip-link, .fold-back, .to-top { display: none; }
+  .site-footer { background: none; color: #000; }
+  .runway { height: auto; margin: 0; } .stage { position: static; height: auto; overflow: visible; }
+  .hero { position: relative; height: 40vh; } .stack { position: static; } .sheet { position: relative; transform: none; margin-top: 40px; } .hero { transform: none; } .tabrail { display: none; }
+}
+
+/* ---------- custom font example (remove the comment marks to use) ----------
+@font-face {
+  font-family: "My Font";
+  src: url("../fonts/my-font.woff2") format("woff2");
+  font-weight: 400 700; font-display: swap;
+}
+-------------------------------------------------------------------------- */
