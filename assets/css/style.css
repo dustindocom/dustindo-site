@@ -87,9 +87,9 @@ p { margin: 0 0 1em; max-width: 68ch; }
   backdrop-filter: grayscale(82%);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; }
-/* .brand img { border-radius: 10px; } */
+.brand img { margin-top: -10px; margin-bottom: -10px; height: 38px; }
 .site-nav__links { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(14px, 3vw, 40px); }
-.site-nav__links a { text-decoration: none; padding: .5em .2em; font-weight: 500; border-bottom: 2px solid transparent; }
+.site-nav__links a { text-decoration: none; padding: .5em .2em; font-weight: 500; border-bottom: 2px solid transparent; color:#ffffff;}
 .site-nav__links a:hover, .site-nav a[aria-current="page"] { border-bottom-color: var(--ink); }
 .brand[aria-current="page"] { border-bottom: 0; }
 @media (max-width: 480px) {
