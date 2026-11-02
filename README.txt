@@ -41,6 +41,13 @@ FOCAL POINT
   the pixel position of the spot to keep centered when the frame is cropped
   (for example on a phone). iw and ih are the image's real pixel size.
 
+DIVIDER TILT
+  Each divider, with all of its content, is tilted by the --tilt value in its style
+  attribute in index.html (for example --tilt:0.45deg). Positive leans clockwise,
+  negative the other way. Keep them between 0.1deg and 0.6deg for a casual,
+  hand-placed look. The tab for each divider (further down the same block) has the
+  same --tilt value, so change both together.
+
 CHANGING COLORS
   Divider colors: the style="--c:#8fa58f" on each <article class="divider"> in index.html,
   and the matching color in works/index.html and each project page.

@@ -87,7 +87,7 @@ p { margin: 0 0 1em; max-width: 68ch; }
   backdrop-filter: grayscale(82%);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; }
-.brand img { border-radius: 10px; }
+/* .brand img { border-radius: 10px; } */
 .site-nav__links { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(14px, 3vw, 40px); }
 .site-nav__links a { text-decoration: none; padding: .5em .2em; font-weight: 500; border-bottom: 2px solid transparent; }
 .site-nav__links a:hover, .site-nav a[aria-current="page"] { border-bottom-color: var(--ink); }
@@ -138,14 +138,17 @@ p { margin: 0 0 1em; max-width: 68ch; }
 .stack { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
 
 .sheet {
-  position: absolute; left: 0; right: 0; top: 0; z-index: var(--i);   /* later sheets sit on top of earlier ones */
-  transform: translateY(var(--y, 100svh));                          /* set by site.js */
+  /* wider than the window (10vw each side) so the tilt never shows gaps; the side padding keeps content at window width */
+  position: absolute; left: -10vw; right: -10vw; top: 0; z-index: var(--i);   /* later sheets sit on top of earlier ones */
+  transform: translateY(var(--y, 100svh)) rotate(var(--tilt, 0deg));       /* --y set by site.js; --tilt set in index.html */
+  transform-origin: 50% 0;                                                  /* pivots on the middle of the top edge */
   pointer-events: auto;
   background: var(--c);                             /* color stretches the full window width */
   border-top: 1px solid rgba(255, 255, 255, .5);
-  padding-top: var(--lip);                          /* the colored edge you see when closed or docked */
+  padding: var(--lip) 10vw 0;                       /* the colored edge you see when closed or docked */
   box-shadow: 0 -4px 10px rgba(43, 29, 20, .2);
 }
+.sheet::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 48px; background: var(--c); }   /* fills the corner the tilt would lift */
 
 /* tabs: one row across the content width, four equal slots. site.js lowers each tab to
    the top of its divider, and docks it under the nav once the divider has scrolled up. */
@@ -157,7 +160,8 @@ p { margin: 0 0 1em; max-width: 68ch; }
 }
 .sheet__tab {
   grid-column: var(--col); grid-row: 1; pointer-events: auto;
-  transform: translateY(var(--ty, 100svh));         /* set by site.js */
+  transform: translateY(var(--ty, 100svh)) rotate(var(--tilt, 0deg));   /* --ty set by site.js; tilts with its divider */
+  transform-origin: 50% 100%;
   height: var(--tab-h); margin: 0 4px;
   font: 600 1.05rem/1 var(--font-display); color: var(--ink);
   background: var(--c);
@@ -167,7 +171,7 @@ p { margin: 0 0 1em; max-width: 68ch; }
   cursor: pointer;
   transition: translate .2s var(--ease), filter .2s;
 }
-.sheet__tab:hover { translate: 0 -3px; filter: brightness(1.06); }
+.sheet__tab:hover { translate: 0 -0px; filter: brightness(1.06); }
 
 /* the content is exactly as tall as it is; it never scrolls inside itself */
 .sheet.is-closed .sheet__body { visibility: hidden; }
@@ -175,7 +179,7 @@ p { margin: 0 0 1em; max-width: 68ch; }
   position: relative;
   max-width: var(--content); margin: 0 auto;
   padding: clamp(20px, 3vw, 48px) var(--gutter);
-  display: grid; gap: clamp(14px, 3vw, 48px); align-items: center;
+  display: grid; gap: clamp(14px, 3vw, 48px); align-items: center;  top: -11px;
 }
 /* paper texture sits on top of the color */
 .sheet__inner::before {
@@ -212,7 +216,8 @@ p { margin: 0 0 1em; max-width: 68ch; }
 .no-js .stage { position: static; height: auto; overflow: visible; }
 .no-js .hero { position: relative; height: 70svh; }
 .no-js .stack { position: static; }
-.no-js .sheet { position: relative; transform: none; }
+.no-js .sheet { position: relative; left: 0; right: 0; padding-inline: 0; transform: none; }
+.no-js .sheet::after { display: none; }
 .no-js .hero { transform: none; }
 .no-js .sheet { margin-top: var(--tab-h); }
 .no-js .tabrail { display: none; }
@@ -288,7 +293,7 @@ p { margin: 0 0 1em; max-width: 68ch; }
   .site-header, .skip-link, .fold-back, .to-top { display: none; }
   .site-footer { background: none; color: #000; }
   .runway { height: auto; margin: 0; } .stage { position: static; height: auto; overflow: visible; }
-  .hero { position: relative; height: 40vh; } .stack { position: static; } .sheet { position: relative; transform: none; margin-top: 40px; } .hero { transform: none; } .tabrail { display: none; }
+  .hero { position: relative; height: 40vh; } .stack { position: static; } .sheet { position: relative; left: 0; right: 0; padding-inline: 0; transform: none; margin-top: 40px; } .sheet::after { display: none; } .hero { transform: none; } .tabrail { display: none; }
 }
 
 /* ---------- custom font example (remove the comment marks to use) ----------

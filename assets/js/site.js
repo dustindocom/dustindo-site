@@ -43,6 +43,7 @@
   var tabs = Array.prototype.slice.call(runway.querySelectorAll('.sheet__tab'));
   var N = sheets.length;
   var H = [], C = [];                 // H: content height of each divider. C: running total of H.
+  var slope = [];                     // height of each divider's tilted edge under the middle of its tab, relative to the edge's centre
   var total = 0, vh = 0, runTop = 0, edge = 13, tabH = 40, dock = 120, s = 0;
   var h = sheets.map(function () { return 0; });   // visible content height of each divider right now
   var ticking = false, lastScroll = 0;
@@ -57,12 +58,18 @@
     vh = stage.offsetHeight;
     tabH = px('--tab-h', 40);
     edge = px('--lip', 12) + 1;                          // height of one divider's colored edge
-    dock = px('--header-h', 74) + 6 + tabH;              // top of the first docked edge, just under the tabs
+    dock = px('--header-h', 74) + 10 + tabH;             // top of the first docked edge; the gap leaves room for the tilt
     total = 0;
     for (var i = 0; i < N; i++) {
       H[i] = sheets[i].querySelector('.sheet__inner').offsetHeight;   // the content's own height
       total += H[i];
       C[i] = total;
+    }
+    var rail = runway.querySelector('.tabrail').getBoundingClientRect().left, w = stage.clientWidth;
+    for (i = 0; i < N; i++) {                            // tilted edges: find the edge's height under the middle of each tab
+      var tilt = parseFloat(getComputedStyle(tabs[i]).getPropertyValue('--tilt')) || 0;
+      var mid = rail + tabs[i].offsetLeft + tabs[i].offsetWidth / 2 - w / 2;
+      slope[i] = mid * Math.tan(tilt * Math.PI / 180);
     }
     runway.style.height = (vh + total) + 'px';           // exactly as much scrolling as the content needs
     runTop = runway.getBoundingClientRect().top + window.pageYOffset;
@@ -84,7 +91,7 @@
       h[i] = Math.max(0, bottom - top[i] - edge);        // how much of this divider's content shows above the next one
       sheets[i].style.setProperty('--y', top[i].toFixed(1) + 'px');
       sheets[i].classList.toggle('is-closed', h[i] < 1);
-      tabs[i].style.setProperty('--ty', (top[i] - tabH).toFixed(1) + 'px');
+      tabs[i].style.setProperty('--ty', (top[i] + slope[i] - tabH).toFixed(1) + 'px');
       tabs[i].setAttribute('aria-expanded', h[i] > H[i] / 2 ? 'true' : 'false');
     }
   }

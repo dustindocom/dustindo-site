@@ -29,7 +29,7 @@
 <header class="site-header">
   <nav class="site-nav" aria-label="Main">
     <a class="brand" href="./" aria-current="page">
-      <img src="assets/img/logo.svg" width="44" height="44" alt="">
+      <img src="assets/img/ddlogo.svg" alt="Dustin Do logo">
       <span class="brand__text">Home</span>
     </a>
     <ul class="site-nav__links">
@@ -47,7 +47,7 @@
         <!-- HERO IMAGE. Focal point: --fx and --fy are the pixel (x, y) of the spot in the image that should stay
              near the centre when the window is resized. --iw and --ih are the image's real pixel width and height.
              Change all four together if you swap the image. -->
-        <img class="focal hero__img" src="assets/img/hero.svg" width="1600" height="900" alt="Four colored binder dividers fanned out" style="--fx:800;--fy:380;--iw:1600;--ih:900" decoding="async">
+        <img class="focal hero__img" src="assets/img/under-construction.gif" width="1600" height="900" alt="Four colored binder dividers fanned out" style="--fx:800;--fy:380;--iw:1600;--ih:900" decoding="async">
         <div class="hero__text">
           <h1>Dustin Do</h1>
           <p>Design portfolio</p>
@@ -55,7 +55,7 @@
       </div>
     </section>
     <div class="stack">
-    <article class="sheet" id="sheet-one" style="--c:#8fa58f;--i:1;--col:1">
+    <article class="sheet" id="sheet-one" style="--c:#edd08a;--i:1;--col:1;--tilt:0.45deg">
       <div class="sheet__body" id="panel-one">
         <div class="sheet__inner">
           <figure class="sheet__figure">
@@ -69,7 +69,7 @@
         </div>
       </div>
     </article>
-    <article class="sheet" id="sheet-two" style="--c:#d3a84f;--i:2;--col:2">
+    <article class="sheet" id="sheet-two" style="--c:#d3a84f;--i:2;--col:2;--tilt:-0.2deg">
       <div class="sheet__body" id="panel-two">
         <div class="sheet__inner">
           <figure class="sheet__figure">
@@ -83,7 +83,7 @@
         </div>
       </div>
     </article>
-    <article class="sheet" id="sheet-three" style="--c:#7d97b3;--i:3;--col:3">
+    <article class="sheet" id="sheet-three" style="--c:#7d97b3;--i:3;--col:3;--tilt:0.6deg">
       <div class="sheet__body" id="panel-three">
         <div class="sheet__inner">
           <figure class="sheet__figure">
@@ -97,7 +97,7 @@
         </div>
       </div>
     </article>
-    <article class="sheet" id="sheet-misc" style="--c:#9b7b9a;--i:4;--col:4">
+    <article class="sheet" id="sheet-misc" style="--c:#9b7b9a;--i:4;--col:4;--tilt:-0.35deg">
       <div class="sheet__body" id="panel-misc">
         <div class="sheet__inner">
           <figure class="sheet__figure">
@@ -114,10 +114,10 @@
     </div>
     <!-- The tabs live in their own row so they can dock under the nav while the pages scroll beneath. -->
     <div class="tabrail">
-      <button class="sheet__tab" type="button" style="--c:#8fa58f;--col:1" aria-expanded="false" aria-controls="panel-one">one</button>
-      <button class="sheet__tab" type="button" style="--c:#d3a84f;--col:2" aria-expanded="false" aria-controls="panel-two">two</button>
-      <button class="sheet__tab" type="button" style="--c:#7d97b3;--col:3" aria-expanded="false" aria-controls="panel-three">three</button>
-      <button class="sheet__tab" type="button" style="--c:#9b7b9a;--col:4" aria-expanded="false" aria-controls="panel-misc">misc</button>
+      <button class="sheet__tab" type="button" style="--c:#edd08a;--col:1;--tilt:0.45deg" aria-expanded="false" aria-controls="panel-one" top: -2px; width: 80%;><img src="assets/img/va-tab.png" alt="Various Artists"></button>
+      <button class="sheet__tab" type="button" style="--c:#d3a84f;--col:2;--tilt:-0.2deg" aria-expanded="false" aria-controls="panel-two">two</button>
+      <button class="sheet__tab" type="button" style="--c:#7d97b3;--col:3;--tilt:0.6deg" aria-expanded="false" aria-controls="panel-three">three</button>
+      <button class="sheet__tab" type="button" style="--c:#9b7b9a;--col:4;--tilt:-0.35deg" aria-expanded="false" aria-controls="panel-misc">misc</button>
     </div>
   </div>
 </div>
