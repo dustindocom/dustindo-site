@@ -23,9 +23,9 @@
      1. SETTINGS
      --------------------------------------------------------------------------- */
   var SITE = {
-    name: 'Dustin Do',
+    name: 'Dustin Do - Creative. Designer.',
     domain: 'https://dustindo.com',    // your real address, with no slash at the end
-    email: 'hello@dustindo.com',
+    email: 'me@dustindo.com',
     startYear: 2026                    // the footer shows 2026, and later 2026-2028
   };
 

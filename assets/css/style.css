@@ -200,7 +200,14 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
   filter: drop-shadow(0 2px 2px rgba(43, 29, 20, .35));
   -webkit-user-drag: none; user-select: none; pointer-events: none;
 }
-
+#tab1 {  margin-top: 8px; position: absolute; 
+}
+#tab2 {  margin-top: 2px; position: absolute;
+}
+#tab3 {  margin-top: 8px; position: absolute;
+}
+#tab4 {  margin-top: 8px; position: absolute;
+}
 /* Stickers on a divider. Put <img class="sticker"> inside the divider's .sheet__stickers frame. The frame matches the
    content area (the same width on every screen), is never clipped, and tilts with the divider. */
 .sheet__stickers {
@@ -286,6 +293,17 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
   .work { grid-template-columns: 1.6fr 1fr; }
   .work--flip .work__figure { order: 2; }
 }
+a.ddlinks { display: inline-block; 
+  padding: .4em .8em; 
+  background: none; 
+  color: #0078e1; 
+  text-decoration: underline; 
+  font-weight: 600; 
+  font-size: 1.5rem; 
+  display: block;
+  width: max-content; /* Adjusts to the exact size of the text */
+  margin: 1em auto;
+  text-align: center; /* Centers the text inside the box */ }
 
 .project__hero { margin: 0 0 24px; aspect-ratio: 16 / 9; max-height: 80svh; overflow: hidden; border-radius: 8px; background: var(--c); }
 .project__meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 0 0 clamp(24px, 4vw, 56px); padding: 16px 0; border-block: 1px solid rgba(43, 29, 20, .2); }
