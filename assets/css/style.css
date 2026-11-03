@@ -235,6 +235,7 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
 .sheet__figure .focal { border-radius: inherit; }
 .sheet__copy { position: relative; z-index: 4; }
 .sheet__copy h2 { font-size: clamp(1.6rem, 3vw, 2.6rem); }
+.sheet_roles { font-size: .9rem; color: var(--ink-soft); margin: -.4em 0 2em; weight: 1000; }
 
 @media (min-width: 900px) {
   .sheet__inner { grid-template-columns: minmax(0, 1fr) minmax(260px, 360px); padding-left: calc(var(--gutter) + 40px); }

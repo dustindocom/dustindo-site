@@ -1,0 +1,1174 @@
+import os, textwrap, shutil
+
+ROOT = "/home/claude/dustindo-site"
+if os.path.exists(ROOT):
+    shutil.rmtree(ROOT)
+
+SITE = "Dustin Do"
+DOMAIN = "https://dustindo.com"   # placeholder: change to your real domain
+EMAIL = "hello@dustindo.com"      # placeholder: change to your real email
+YEAR = "2026"
+
+def w(path, content):
+    full = os.path.join(ROOT, path)
+    os.makedirs(os.path.dirname(full), exist_ok=True)
+    with open(full, "w", encoding="utf-8") as f:
+        f.write(content)
+
+# ---------------------------------------------------------------- content
+TILTS = ["0.45deg", "-0.2deg", "0.6deg", "-0.35deg"]   # clockwise, counter-clockwise, ... each between 0.1 and 0.6
+
+TAB_STICKER_TILTS = ["-6deg", "4deg", "-3deg", "7deg"]   # each tab sticker leans a little differently
+
+STICKER_FRAMES = [
+    # Divider one carries a demo sticker so you can see one hanging off the edge. Delete the <img> line when you are done with it.
+    """      <div class="sheet__stickers" aria-hidden="true">
+        <!-- STICKERS ON THIS DIVIDER. Put <img class="sticker"> lines in here. This frame matches the content area and is never clipped.
+             --l or --r : distance from the left or right of the content area (use %, so it works on every screen)
+             --t or --b : distance from the top or bottom edge in px (a negative number hangs outside the divider)
+             --w : width in px      --rot : tilt in degrees -->
+        <img class="sticker" src="assets/img/stickers/sticker-example.svg" alt="" width="120" height="120" style="--r:3%;--t:-46px;--w:112px;--rot:9deg" draggable="false">
+      </div>
+""",
+    """      <div class="sheet__stickers" aria-hidden="true"></div>\n""",
+    """      <div class="sheet__stickers" aria-hidden="true"></div>\n""",
+    """      <div class="sheet__stickers" aria-hidden="true"></div>\n""",
+]
+
+PROJECTS = [
+    dict(slug="one",   label="one",  color="#8fa58f", title="Project one headline",
+         desc="A short description of project one: the problem, your role, and the result. Replace this text with your own.",
+         year="2026", role="Role goes here", tools="Tools go here"),
+    dict(slug="two",   label="two",  color="#d3a84f", title="Project two headline",
+         desc="A short description of project two: the problem, your role, and the result. Replace this text with your own.",
+         year="2025", role="Role goes here", tools="Tools go here"),
+    dict(slug="three", label="three", color="#7d97b3", title="Project three headline",
+         desc="A short description of project three: the problem, your role, and the result. Replace this text with your own.",
+         year="2025", role="Role goes here", tools="Tools go here"),
+    dict(slug="misc",  label="misc", color="#9b7b9a", title="Miscellaneous work",
+         desc="Smaller projects, experiments and sketches that do not fit in a full case study.",
+         year="2024", role="Role goes here", tools="Tools go here"),
+]
+
+# ---------------------------------------------------------------- shared html
+# Every page keeps only its own <title>, description and content. The <head> extras, the
+# header/nav and the footer all come from assets/js/shell.js (one file to edit).
+def head(title, desc, up, path="", extra=""):
+    full_title = SITE if title is None else f"{title} | {SITE}"
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{full_title}</title>
+<meta name="description" content="{desc}">
+<script src="{up}assets/js/shell.js"></script>
+</head>
+<body>
+<site-header></site-header>
+<main id="main">
+"""
+
+def footer(up):
+    return """</main>
+<site-footer></site-footer>
+</body>
+</html>
+"""
+
+def figure(src, alt, fx, fy, iw, ih, cls="", eager=False):
+    load = "" if eager else ' loading="lazy"'
+    return (f'<img class="focal {cls}" src="{src}" width="{iw}" height="{ih}" alt="{alt}" '
+            f'style="--fx:{fx};--fy:{fy};--iw:{iw};--ih:{ih}"{load} decoding="async">')
+
+# ---------------------------------------------------------------- pages
+def home():
+    up = ""
+    h = head(None, f"{SITE}: design portfolio.", up)
+    h += """<div class="runway" id="work">
+  <div class="stage">
+    <section class="hero" aria-label="Introduction">
+      <div class="hero__box">
+        <!-- HERO IMAGE. Focal point: --fx and --fy are the pixel (x, y) of the spot in the image that should stay
+             near the centre when the window is resized. --iw and --ih are the image's real pixel width and height.
+             Change all four together if you swap the image. -->
+        """ + figure("assets/img/hero.svg", "Four colored binder dividers fanned out", 800, 380, 1600, 900, "hero__img", True) + """
+        <div class="hero__text">
+          <h1>""" + SITE + """</h1>
+          <p>Design portfolio</p>
+        </div>
+      </div>
+    </section>
+    <div class="stack">
+"""
+    for i, p in enumerate(PROJECTS):
+        h += f"""    <article class="sheet" id="sheet-{p['slug']}" style="--c:{p['color']};--i:{i+1};--col:{i+1};--tilt:{TILTS[i]}">
+{STICKER_FRAMES[i]}      <div class="sheet__body" id="panel-{p['slug']}">
+        <div class="sheet__inner">
+          <figure class="sheet__figure">
+            {figure(f"assets/img/project-{p['slug']}.svg", f"Preview of {p['title']}", 800, 500, 1600, 1000)}
+          </figure>
+          <div class="sheet__copy">
+            <h2>{p['title']}</h2>
+            <p>{p['desc']}</p>
+            <a class="button" href="works/{p['slug']}/">View project</a>
+          </div>
+        </div>
+      </div>
+    </article>
+"""
+    h += "    </div>\n    <!-- The tabs live in their own row so they can dock under the nav while the pages scroll beneath.\n         STICKER LABELS: each tab holds a sticker <img class=\"tab-sticker\">. Swap the file in src for your own image.\n         It is centered on the tab and may hang above and below it. Per-tab tweaks go in that button's style attribute:\n         --sticker-h (height, default is 1.7 times the tab height), --sx / --sy (nudge sideways / up and down in px), --sr (tilt). -->\n    <div class=\"tabrail\">\n"
+    for i, p in enumerate(PROJECTS):
+        h += f"""      <button class="sheet__tab has-sticker" type="button" style="--c:{p['color']};--col:{i+1};--tilt:{TILTS[i]};--sr:{TAB_STICKER_TILTS[i]}" aria-expanded="false" aria-controls="panel-{p['slug']}">
+        <span class="sheet__tab-label">{p['label']}</span>
+        <img class="tab-sticker" src="assets/img/stickers/tab-{p['slug']}.svg" width="100" height="100" alt="" draggable="false">
+      </button>\n"""
+    h += "    </div>\n  </div>\n</div>\n" + footer(up)
+    w("index.html", h)
+
+def works_index():
+    up = "../"
+    h = head("Works", f"Selected design work by {SITE}.", up, "works/")
+    h += """<div class="page">
+  <header class="page__head">
+    <h1>Works</h1>
+    <p>Selected projects. Each one opens a full write-up.</p>
+  </header>
+"""
+    for i, p in enumerate(PROJECTS):
+        flip = " work--flip" if i % 2 else ""
+        h += f"""  <section class="work{flip}" style="--c:{p['color']}">
+    <a class="work__figure" href="{p['slug']}/" tabindex="-1" aria-hidden="true">
+      {figure(f"{up}assets/img/project-{p['slug']}.svg", "", 800, 500, 1600, 1000)}
+    </a>
+    <div class="work__copy">
+      <h2><a href="{p['slug']}/">{p['title']}</a></h2>
+      <p>{p['desc']}</p>
+      <a class="button" href="{p['slug']}/">View project</a>
+    </div>
+  </section>
+"""
+    h += "</div>\n" + footer(up)
+    w("works/index.html", h)
+
+def project_pages():
+    up = "../../"
+    for i, p in enumerate(PROJECTS):
+        prev_p = PROJECTS[i - 1]
+        next_p = PROJECTS[(i + 1) % len(PROJECTS)]
+        h = head(p["title"], p["desc"], up, f"works/{p['slug']}/")
+        h += f"""<article class="page project" style="--c:{p['color']}">
+  <p class="crumbs"><a href="../">Works</a> / {p['label']}</p>
+  <header class="page__head">
+    <h1>{p['title']}</h1>
+    <p>{p['desc']}</p>
+  </header>
+  <figure class="project__hero">
+    {figure(f"{up}assets/img/project-{p['slug']}.svg", f"Main image for {p['title']}", 800, 500, 1600, 1000, "", True)}
+  </figure>
+  <dl class="project__meta">
+    <div><dt>Year</dt><dd>{p['year']}</dd></div>
+    <div><dt>Role</dt><dd>{p['role']}</dd></div>
+    <div><dt>Tools</dt><dd>{p['tools']}</dd></div>
+  </dl>
+  <div class="project__body prose">
+    <h2>The challenge</h2>
+    <p>Describe the problem this project set out to solve and who it was for.</p>
+    <h2>The process</h2>
+    <p>Walk through your approach: research, sketches, iterations, and the decisions you made along the way.</p>
+    <h2>The result</h2>
+    <p>Share what shipped and what changed because of it. Add numbers or quotes if you have them.</p>
+  </div>
+  <nav class="project__pager" aria-label="More projects">
+    <a href="../{prev_p['slug']}/" rel="prev"><span>Previous</span>{prev_p['label']}</a>
+    <a href="../{next_p['slug']}/" rel="next"><span>Next</span>{next_p['label']}</a>
+  </nav>
+</article>
+"""
+        h += footer(up)
+        w(f"works/{p['slug']}/index.html", h)
+
+def contact():
+    up = "../"
+    h = head("Contact", f"Get in touch with {SITE}.", up, "contact/")
+    h += f"""<div class="page page--narrow">
+  <header class="page__head">
+    <h1>Contact</h1>
+    <p>For work enquiries, collaborations, or just to say hello, email is best.</p>
+  </header>
+  <div class="prose">
+    <p><a class="button" href="mailto:{EMAIL}">{EMAIL}</a></p>
+    <h2>Elsewhere</h2>
+    <ul>
+      <li><a href="https://www.linkedin.com/" rel="noopener" target="_blank">LinkedIn</a></li>
+      <li><a href="https://www.behance.net/" rel="noopener" target="_blank">Behance</a></li>
+    </ul>
+    <h2>Availability</h2>
+    <p>Add your location, time zone, and what kind of work you are open to.</p>
+  </div>
+</div>
+"""
+    h += footer(up)
+    w("contact/index.html", h)
+
+def about():
+    up = "../"
+    h = head("About", f"About {SITE}.", up, "about/")
+    h += f"""<div class="page">
+  <header class="page__head">
+    <h1>About</h1>
+  </header>
+  <div class="about">
+    <figure class="about__portrait">
+      {figure(f"{up}assets/img/portrait.svg", f"Portrait of {SITE}", 400, 500, 800, 1000)}
+    </figure>
+    <div class="prose">
+      <p>Write a short introduction here: who you are, what you design, and what you care about.</p>
+      <p>Add a second paragraph about your background, the kinds of teams you have worked with, and what you are looking for next.</p>
+      <h2>Skills</h2>
+      <ul>
+        <li>Skill one</li>
+        <li>Skill two</li>
+        <li>Skill three</li>
+      </ul>
+      <h2>Experience</h2>
+      <ul>
+        <li><strong>Job title</strong>, Company, years</li>
+        <li><strong>Job title</strong>, Company, years</li>
+      </ul>
+      <!-- To offer a resume download, put the PDF in the assets folder and uncomment:
+      <p><a class="button" href="../assets/dustin-do-resume.pdf" download>Download resume (PDF)</a></p> -->
+    </div>
+  </div>
+</div>
+"""
+    h += footer(up)
+    w("about/index.html", h)
+
+def not_found():
+    # 404 uses absolute paths because a server may show it from any URL depth.
+    h = head("Page not found", "That page could not be found.", "/", "404.html")
+    h += """<div class="page page--narrow">
+  <header class="page__head">
+    <h1>Page not found</h1>
+    <p>The page you asked for does not exist or has moved.</p>
+  </header>
+  <p><a class="button" href="/">Go to the home page</a></p>
+</div>
+"""
+    h += footer("/")
+    w("404.html", h)
+
+home(); works_index(); project_pages(); contact(); about(); not_found()
+
+# ---------------------------------------------------------------- misc files
+w("robots.txt", f"User-agent: *\nAllow: /\nSitemap: {DOMAIN}/sitemap.xml\n")
+urls = ["", "works/", "works/one/", "works/two/", "works/three/", "works/misc/", "contact/", "about/"]
+w("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+  + "".join(f"  <url><loc>{DOMAIN}/{u}</loc></url>\n" for u in urls) + "</urlset>\n")
+w("site.webmanifest", '{\n  "name": "Dustin Do",\n  "short_name": "Dustin Do",\n  "start_url": "/",\n  "display": "browser",\n  "background_color": "#ece3da",\n  "theme_color": "#d5b399",\n  "icons": [{"src": "assets/img/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]\n}\n')
+w(".htaccess", """# Used by Apache servers (most FTP hosts). Ignored when you open the site offline.
+DirectoryIndex index.html
+ErrorDocument 404 /404.html
+Options -Indexes
+
+# Always send /works/one (no trailing slash) to /works/one/
+DirectorySlash On
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType text/css "access plus 1 week"
+  ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
+""")
+
+# ---------------------------------------------------------------- images (placeholders)
+INK = "#2b1d14"
+w("assets/img/logo.svg", f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<title>Dustin Do logo</title>
+<rect x="2" y="2" width="60" height="60" rx="14" fill="{INK}"/>
+<path d="M16 16h13a16 16 0 0 1 0 32H16z" fill="none" stroke="#d5b399" stroke-width="5" stroke-linejoin="round"/>
+<path d="M36 16h6a16 16 0 0 1 0 32h-6" fill="none" stroke="#d5b399" stroke-width="5" stroke-linejoin="round" opacity=".55"/>
+</svg>
+""")
+w("assets/img/favicon.svg", open(os.path.join(ROOT, "assets/img/logo.svg")).read())
+w("assets/img/paper.svg", """<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480">
+<filter id="n" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="3" stitchTiles="stitch"/>
+<feColorMatrix values="0 0 0 0 .17  0 0 0 0 .11  0 0 0 0 .08  0 0 0 .55 0"/></filter>
+<filter id="f" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".012 .22" numOctaves="2" seed="4" stitchTiles="stitch"/>
+<feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .35 -.1"/></filter>
+<rect width="480" height="480" filter="url(#n)" opacity=".5"/>
+<rect width="480" height="480" filter="url(#f)" opacity=".6"/>
+</svg>
+""")
+
+def art(name, bg, shapes, label):
+    w(f"assets/img/{name}.svg", f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000">
+<title>{label}</title>
+<rect width="1600" height="1000" fill="{bg}"/>
+{shapes}
+<text x="800" y="940" text-anchor="middle" font-family="sans-serif" font-size="26" fill="{INK}" opacity=".7">{label}: replace with your image (1600 x 1000)</text>
+</svg>
+""")
+
+art("project-one", "#8fa58f",
+    '<circle cx="800" cy="500" r="300" fill="#eef2ea" opacity=".55"/><circle cx="800" cy="500" r="190" fill="#2b1d14" opacity=".85"/><rect x="560" y="470" width="480" height="60" rx="30" fill="#d5b399"/>', "Project one")
+art("project-two", "#d3a84f",
+    '<rect x="470" y="220" width="660" height="560" rx="28" fill="#fff6dd" opacity=".7"/><rect x="560" y="320" width="300" height="360" fill="#2b1d14" opacity=".85"/><rect x="900" y="320" width="140" height="170" fill="#8fa58f"/><rect x="900" y="520" width="140" height="160" fill="#7d97b3"/>', "Project two")
+art("project-three", "#7d97b3",
+    '<path d="M420 760 L800 220 L1180 760 Z" fill="#e8eef5" opacity=".7"/><path d="M590 760 L800 460 L1010 760 Z" fill="#2b1d14" opacity=".85"/><circle cx="1090" cy="300" r="70" fill="#d3a84f"/>', "Project three")
+art("project-misc", "#9b7b9a",
+    '<g fill="#f3e9f2" opacity=".7"><rect x="420" y="260" width="240" height="240" rx="20"/><rect x="700" y="260" width="240" height="240" rx="120"/><rect x="980" y="260" width="200" height="240" rx="20"/></g><g fill="#2b1d14" opacity=".85"><rect x="420" y="540" width="520" height="200" rx="20"/><circle cx="1080" cy="640" r="100"/></g>', "Misc")
+
+w("assets/img/hero.svg", f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+<title>Hero placeholder</title>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9c4b0"/><stop offset=".5" stop-color="#e6d5c4"/><stop offset="1" stop-color="#d9c4b0"/></linearGradient>
+<filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#2b1d14" flood-opacity=".28"/></filter></defs>
+<rect width="1600" height="900" fill="url(#g)"/>
+<g filter="url(#s)">
+ <g transform="rotate(-14 800 560)"><rect x="560" y="200" width="480" height="640" rx="18" fill="#9b7b9a"/><rect x="560" y="170" width="140" height="40" rx="12" fill="#9b7b9a"/></g>
+ <g transform="rotate(-5 800 560)"><rect x="560" y="200" width="480" height="640" rx="18" fill="#7d97b3"/><rect x="700" y="170" width="140" height="40" rx="12" fill="#7d97b3"/></g>
+ <g transform="rotate(5 800 560)"><rect x="560" y="200" width="480" height="640" rx="18" fill="#d3a84f"/><rect x="840" y="170" width="140" height="40" rx="12" fill="#d3a84f"/></g>
+ <g transform="rotate(14 800 560)"><rect x="560" y="200" width="480" height="640" rx="18" fill="#8fa58f"/><rect x="900" y="170" width="140" height="40" rx="12" fill="#8fa58f"/></g>
+</g>
+<text x="800" y="870" text-anchor="middle" font-family="sans-serif" font-size="24" fill="{INK}" opacity=".6">Hero placeholder: replace with your image (1600 x 900)</text>
+</svg>
+""")
+w("assets/img/portrait.svg", f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000"><title>Portrait placeholder</title>
+<rect width="800" height="1000" fill="#d5b399"/><circle cx="400" cy="380" r="150" fill="#2b1d14" opacity=".8"/><path d="M120 1000a280 280 0 0 1 560 0z" fill="#2b1d14" opacity=".8"/>
+<text x="400" y="960" text-anchor="middle" font-family="sans-serif" font-size="26" fill="#2b1d14" opacity=".7">Portrait placeholder (800 x 1000)</text></svg>
+""")
+w("assets/img/social-share.svg", f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630"><rect width="1200" height="630" fill="#d5b399"/>
+<text x="600" y="340" text-anchor="middle" font-family="Georgia,serif" font-size="110" fill="#2b1d14">Dustin Do</text></svg>
+""")
+
+# ---------------------------------------------------------------- CSS
+w("assets/css/style.css", r"""/* =====================================================================
+   DUSTIN DO: SITE STYLES
+   Everything you are likely to edit is in the :root block below.
+   No internet is needed: there are no web fonts, CDNs or frameworks.
+   ===================================================================== */
+
+:root {
+  /* ---- colors ---- */
+  --bg: #ece3da;            /* page background (stretches full window width) */
+  --ink: #2b1d14;           /* main text */
+  --ink-soft: #5b4636;      /* secondary text */
+  --nav-bg: #d5b399;        /* navigation bar color */
+  --footer-bg: #2a1c13;     /* dark brown footer */
+  --footer-ink: #eadfd2;
+  --hero-bg: #d9c4b0;       /* must match the outer edge color of your hero image */
+
+  /* ---- content width ----
+     Colors run edge to edge, but content never gets wider than this.
+     1600 px means images only ever need to be 1600 px wide (3200 px if you
+     want them razor sharp on retina screens). On 1080p, 2K and 4K screens the
+     extra space is filled with color, never with stretched images. */
+  --content: 1600px;
+  --gutter: clamp(16px, 4vw, 64px);
+
+  /* ---- type (system fonts so it works offline) ----
+     To use your own font: put .woff2 files in assets/fonts/ and add an
+     @font-face rule at the bottom of this file, then put its name first here. */
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --header-h: 74px;         /* height of the floating nav area */
+  --tab-h: 40px;            /* height of a binder tab */
+  --tab-overhang: 16px;     /* how far a tab sticker may hang above its tab; docked tabs sit this much lower so stickers clear the nav */
+  --sticker-h: calc(var(--tab-h) * 1.7);   /* default height of a tab sticker (its width follows the image) */
+  --lip: 12px;              /* colored edge of each divider when closed */
+  --ease: cubic-bezier(.22, .8, .2, 1);
+}
+
+/* ---------- base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: clip; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: inherit; text-underline-offset: 0.2em; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 .5em; }
+p { margin: 0 0 1em; max-width: 68ch; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+::selection { background: var(--nav-bg); }
+
+site-header, site-footer { display: contents; }   /* shared parts injected by assets/js/shell.js; no layout box of their own */
+.skip-link { position: absolute; left: 12px; top: -80px; z-index: 200; background: var(--ink); color: #fff; padding: .6em 1em; border-radius: 8px; }
+.skip-link:focus { top: 12px; }
+
+/* Images with a focal point. --fx/--fy = pixel position in the image that stays
+   near the middle as the frame changes shape. --iw/--ih = image pixel size. */
+.focal {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: calc(var(--fx) / var(--iw) * 100%) calc(var(--fy) / var(--ih) * 100%);
+}
+
+.button {
+  display: inline-block; padding: .7em 1.3em; border-radius: 999px;
+  background: var(--ink); color: #fff; text-decoration: none; font-weight: 600;
+  transition: transform .2s var(--ease), background .2s;
+}
+.button:hover { transform: translateY(-2px); background: #46301f; }
+
+/* ---------- navigation (sticky) ---------- */
+.site-header { position: sticky; top: 0; z-index: 100; height: var(--header-h); padding: 12px 12px 0; pointer-events: none; }
+.site-nav {
+  pointer-events: auto;
+  max-width: var(--content); margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 16px;
+  min-height: calc(var(--header-h) - 12px);
+  border: 1px solid #fff;
+  border-radius: 14px;
+  background-color: rgba(213, 179, 153, 0.8);   /* #d5b399 at 80% */
+  -webkit-backdrop-filter: grayscale(82%);
+  backdrop-filter: grayscale(82%);
+}
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; }
+.brand img { border-radius: 10px; }
+.site-nav__links { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(14px, 3vw, 40px); }
+.site-nav__links a { text-decoration: none; padding: .5em .2em; font-weight: 500; border-bottom: 2px solid transparent; }
+.site-nav__links a:hover, .site-nav a[aria-current="page"] { border-bottom-color: var(--ink); }
+.brand[aria-current="page"] { border-bottom: 0; }
+@media (max-width: 480px) {
+  .brand__text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* logo only, still readable by screen readers */
+  .site-nav { padding: 6px 12px; }
+}
+
+/* ---------- home: pinned stage (hero + binder dividers) ----------
+   The .runway is a tall block. Inside it the .stage stays pinned to the window
+   while you scroll through the runway. site.js turns scroll position into a
+   number (--t, 0 to 1) on each divider, and the divider slides up by that much.
+   When the runway ends the stage lets go and the footer scrolls in. */
+.runway {
+  --step: max(380px, 55svh);                       /* scroll distance per divider */
+  position: relative;
+  overflow-x: clip;                                  /* dividers are wider than the window (for the tilt); never let that scroll sideways */
+  height: calc(100svh + 4 * var(--step));
+  margin-top: calc(-1 * var(--header-h));          /* hero runs under the floating nav */
+}
+/* The stage is trimmed at its bottom edge only (so the dividers never spill onto the footer). Top and sides are
+   left open so stickers can hang outside their dividers. */
+.stage { position: sticky; top: 0; height: 100svh; clip-path: inset(-600px -600px 0 -600px); background: var(--hero-bg); }
+
+.hero { position: absolute; inset: 0; transform: translateY(var(--hy, 0px)); }   /* drifts up at half speed */
+.hero__box {
+  position: relative; height: 100%; max-height: 900px;   /* image never grows taller than its real size */
+  max-width: var(--content); margin: 0 auto;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 90px), transparent);
+          mask-image: linear-gradient(180deg, #000 calc(100% - 90px), transparent);
+}
+/* very wide windows: image edges dissolve into the hero color instead of stretching */
+@media (min-width: 1700px) {
+  .hero__box {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent), linear-gradient(180deg, #000 calc(100% - 90px), transparent);
+    -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent), linear-gradient(180deg, #000 calc(100% - 90px), transparent);
+            mask-composite: intersect;
+  }
+}
+.hero__text { position: absolute; left: var(--gutter); bottom: calc(var(--tab-h) + 4 * (var(--lip) + 1px) + 32px); }
+.hero__text h1 { font-size: clamp(2.6rem, 7vw, 6rem); margin: 0; }
+.hero__text p { margin: .25em 0 0; font-size: clamp(1.05rem, 2vw, 1.5rem); color: var(--ink-soft); }
+
+/* Each divider is a sheet: a colored edge (with its tab) and its content fixed beneath it.
+   The sheets start tucked at the bottom of the window. Scrolling lifts them one pixel per
+   pixel, so there is no dead space. When a sheet reaches the nav it docks there and stays,
+   content and all, and the sheets below keep rising and slide over it, one after another.
+   (site.js does the arithmetic; this CSS only draws the result.) */
+.stack { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+
+.sheet {
+  /* wider than the window (10vw each side) so the tilt never shows gaps; the side padding keeps content at window width */
+  position: absolute; left: -10vw; right: -10vw; top: 0; z-index: var(--i);   /* later sheets sit on top of earlier ones */
+  transform: translateY(var(--y, 100svh)) rotate(var(--tilt, 0deg));       /* --y set by site.js; --tilt set in index.html */
+  transform-origin: 50% 0;                                                  /* pivots on the middle of the top edge */
+  pointer-events: auto;
+  background: var(--c);                             /* color stretches the full window width */
+  border-top: 1px solid rgba(255, 255, 255, .5);
+  padding: var(--lip) 10vw 0;                       /* the colored edge you see when closed or docked */
+  box-shadow: 0 -4px 10px rgba(43, 29, 20, .2);
+}
+.sheet::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 48px; background: var(--c); }   /* fills the corner the tilt would lift */
+
+/* tabs: one row across the content width, four equal slots. site.js lowers each tab to
+   the top of its divider, and docks it under the nav once the divider has scrolled up. */
+.tabrail {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 20; height: 0;
+  max-width: var(--content); margin: 0 auto; padding: 0 var(--gutter);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  pointer-events: none;
+}
+.sheet__tab {
+  position: relative; overflow: visible;             /* overflow stays visible so a sticker can hang outside the tab */
+  grid-column: var(--col); grid-row: 1; pointer-events: auto;
+  transform: translateY(var(--ty, 100svh)) rotate(var(--tilt, 0deg));   /* --ty set by site.js; tilts with its divider */
+  transform-origin: 50% 100%;
+  height: var(--tab-h); margin: 0 4px;
+  font: 600 1.05rem/1 var(--font-display); color: var(--ink);
+  background: var(--c);
+  border: 1px solid rgba(255, 255, 255, .55); border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -2px 6px rgba(43, 29, 20, .18);
+  cursor: pointer;
+  transition: translate .2s var(--ease), filter .2s;
+}
+.sheet__tab:hover { translate: 0 -3px; filter: brightness(1.06); }
+/* The tab reaches a few pixels down into its divider's colored edge, so when the tab lifts 3px on hover
+   there is no gap between the two. Keep this just a little more than the hover lift (3px): a longer reach
+   shows as a lighter patch, because it sits above the shadow the next divider casts on this one. */
+.sheet__tab::after {
+  content: ""; position: absolute; z-index: 0;
+  left: -1px; right: -1px; top: 100%;
+  height: 5px;
+  background: var(--c);
+}
+
+/* Sticker labels on the tabs. The sticker is sized from the tab's HEIGHT (not its width), so it looks the same on
+   phones and desktops, and it is centered on the tab, hanging above and below it. */
+.has-sticker .sheet__tab-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tab-sticker {
+  position: absolute; z-index: 1; left: 50%; top: 50%;
+  height: var(--sticker-h); width: auto; max-width: none;
+  transform: translate(-50%, -50%) translate(var(--sx, 0px), var(--sy, -6px)) rotate(var(--sr, 0deg));
+  filter: drop-shadow(0 2px 2px rgba(43, 29, 20, .35));
+  -webkit-user-drag: none; user-select: none; pointer-events: none;
+}
+
+/* Stickers on a divider. Put <img class="sticker"> inside the divider's .sheet__stickers frame. The frame matches the
+   content area (the same width on every screen), is never clipped, and tilts with the divider. */
+.sheet__stickers {
+  position: absolute; z-index: 6; pointer-events: none;
+  left: 10vw; right: 10vw; top: 0; bottom: 0;
+  max-width: var(--content); margin: 0 auto;
+}
+.sticker {
+  position: absolute; max-width: none; height: auto;
+  left: var(--l, auto); right: var(--r, auto); top: var(--t, auto); bottom: var(--b, auto);
+  width: var(--w, 96px);
+  transform: rotate(var(--rot, 0deg));
+  filter: drop-shadow(0 3px 3px rgba(43, 29, 20, .35));
+  pointer-events: none; -webkit-user-drag: none; user-select: none;
+}
+
+/* the content is exactly as tall as it is; it never scrolls inside itself */
+.sheet.is-closed .sheet__body { visibility: hidden; }
+.sheet__inner {
+  position: relative;
+  max-width: var(--content); margin: 0 auto;
+  padding: clamp(20px, 3vw, 48px) var(--gutter);
+  display: grid; gap: clamp(14px, 3vw, 48px); align-items: center;
+}
+/* paper texture sits on top of the color */
+.sheet__inner::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+  background-image: url("../img/paper.svg"); background-size: 480px 480px;
+  mix-blend-mode: multiply; opacity: .55;
+}
+.sheet__figure { margin: 0; position: relative; z-index: 1; aspect-ratio: 16 / 10; max-height: 60svh; width: 100%; border-radius: 6px; box-shadow: 0 10px 30px rgba(43, 29, 20, .3); }
+.sheet__figure .focal { border-radius: inherit; }
+.sheet__copy { position: relative; z-index: 4; }
+.sheet__copy h2 { font-size: clamp(1.6rem, 3vw, 2.6rem); }
+
+@media (min-width: 900px) {
+  .sheet__inner { grid-template-columns: minmax(0, 1fr) minmax(260px, 360px); padding-left: calc(var(--gutter) + 40px); }
+  /* punched binder holes down the left edge (desktop only) */
+  .sheet__inner::after {
+    content: ""; position: absolute; left: 22px; top: 0; bottom: 0; width: 24px; pointer-events: none; z-index: 3;
+    background:
+      radial-gradient(circle at 12px 18%, rgba(43,29,20,.35) 0 8px, rgba(255,255,255,.4) 9px 10px, transparent 11px),
+      radial-gradient(circle at 12px 50%, rgba(43,29,20,.35) 0 8px, rgba(255,255,255,.4) 9px 10px, transparent 11px),
+      radial-gradient(circle at 12px 82%, rgba(43,29,20,.35) 0 8px, rgba(255,255,255,.4) 9px 10px, transparent 11px);
+  }
+}
+/* very wide windows: paper and holes fade into the solid color */
+@media (min-width: 1700px) {
+  .sheet__inner::before, .sheet__inner::after {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  }
+}
+@media (max-width: 899px) { .sheet__tab { margin: 0 2px; font-size: .95rem; } }
+
+/* no JavaScript: hero, then the dividers stacked open one after another */
+.no-js .runway { height: auto; margin-top: 0; }
+.no-js .stage { position: static; height: auto; clip-path: none; }
+.no-js .hero { position: relative; height: 70svh; }
+.no-js .stack { position: static; }
+.no-js .sheet { position: relative; left: 0; right: 0; padding-inline: 0; transform: none; }
+.no-js .sheet::after { display: none; }
+.no-js .hero { transform: none; }
+.no-js .sheet { margin-top: var(--tab-h); }
+.no-js .tabrail { display: none; }
+.no-js .fold-back { display: none; }
+
+/* ---------- inner pages ---------- */
+.page { max-width: var(--content); margin: 0 auto; padding: clamp(32px, 6vw, 96px) var(--gutter); }
+.page--narrow { max-width: 900px; }
+.page__head h1 { font-size: clamp(2.4rem, 6vw, 4.5rem); }
+.page__head p { font-size: 1.15em; color: var(--ink-soft); }
+.crumbs { font-size: .9rem; color: var(--ink-soft); }
+.prose h2 { font-size: clamp(1.4rem, 2.4vw, 2rem); margin-top: 1.6em; }
+.prose ul { padding-left: 1.2em; }
+
+.work { display: grid; gap: clamp(16px, 3vw, 48px); align-items: center; padding: clamp(24px, 4vw, 56px) 0; border-top: 1px solid rgba(43, 29, 20, .2); }
+.work__figure { display: block; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 8px; background: var(--c); }
+.work__copy h2 { font-size: clamp(1.6rem, 3vw, 2.6rem); }
+.work__copy h2 a { text-decoration: none; }
+@media (min-width: 900px) {
+  .work { grid-template-columns: 1.6fr 1fr; }
+  .work--flip .work__figure { order: 2; }
+}
+
+.project__hero { margin: 0 0 24px; aspect-ratio: 16 / 9; max-height: 80svh; overflow: hidden; border-radius: 8px; background: var(--c); }
+.project__meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 0 0 clamp(24px, 4vw, 56px); padding: 16px 0; border-block: 1px solid rgba(43, 29, 20, .2); }
+.project__meta dt { font-size: .85rem; color: var(--ink-soft); }
+.project__meta dd { margin: 0; font-weight: 600; }
+.project__pager { display: flex; justify-content: space-between; gap: 16px; margin-top: clamp(32px, 6vw, 80px); padding-top: 24px; border-top: 1px solid rgba(43, 29, 20, .2); font: 600 1.4rem var(--font-display); }
+.project__pager a { text-decoration: none; display: block; }
+.project__pager span { display: block; font: 400 .85rem var(--font-body); color: var(--ink-soft); }
+.project__pager a[rel="next"] { text-align: right; }
+
+.about { display: grid; gap: clamp(20px, 4vw, 64px); }
+.about__portrait { margin: 0; aspect-ratio: 4 / 5; max-width: 420px; overflow: hidden; border-radius: 8px; }
+@media (min-width: 900px) { .about { grid-template-columns: minmax(260px, 420px) 1fr; align-items: start; } }
+
+/* ---------- footer ---------- */
+.site-footer { background: var(--footer-bg); color: var(--footer-ink); }
+.site-footer a { color: inherit; }
+.site-footer__inner {
+  max-width: var(--content); margin: 0 auto;
+  padding: clamp(40px, 6vw, 88px) var(--gutter) 32px;
+  display: grid; gap: 32px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.site-footer__name { font: 600 1.6rem var(--font-display); margin: 12px 0 0; }
+.site-footer__heading { font: 600 1rem var(--font-body); margin: 0 0 .8em; opacity: .7; }
+.site-footer ul { list-style: none; margin: 0; padding: 0; }
+.site-footer li { margin-bottom: .5em; }
+.site-footer__legal {
+  max-width: var(--content); margin: 0 auto;
+  padding: 24px var(--gutter) max(32px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(234, 223, 210, .2);
+  font-size: .85rem; opacity: .85;
+}
+.site-footer__legal p { margin: 0 0 .5em; max-width: 90ch; }
+.to-top { margin-left: 1.5em; }
+
+/* ---------- landscape phones: short screens ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root { --header-h: 56px; --tab-h: 32px; --lip: 8px; }
+  .brand img { width: 32px; height: 32px; }
+  .site-nav { padding: 4px 12px; }
+  .sheet__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 14px; padding-bottom: 14px; }
+  .sheet__figure { max-height: 50svh; }
+  .hero__text h1 { font-size: 2.2rem; }
+}
+
+/* ---------- accessibility + print ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; transition-delay: 0s !important; animation: none !important; }
+}
+@media print {
+  .site-header, .skip-link, .fold-back, .to-top, .sheet__stickers { display: none; }
+  .site-footer { background: none; color: #000; }
+  .runway { height: auto; margin: 0; } .stage { position: static; height: auto; clip-path: none; }
+  .hero { position: relative; height: 40vh; } .stack { position: static; } .sheet { position: relative; left: 0; right: 0; padding-inline: 0; transform: none; margin-top: 40px; } .sheet::after { display: none; } .hero { transform: none; } .tabrail { display: none; }
+}
+
+/* ---------- custom font example (remove the comment marks to use) ----------
+@font-face {
+  font-family: "My Font";
+  src: url("../fonts/my-font.woff2") format("woff2");
+  font-weight: 400 700; font-display: swap;
+}
+-------------------------------------------------------------------------- */
+""")
+
+# ---------------------------------------------------------------- JS
+w("assets/js/site.js", r"""/* DUSTIN DO: SITE SCRIPT
+   Small on purpose. You do not need to edit this file; all text, colors and
+   images live in the HTML and CSS, and the header, nav and footer live in shell.js, which also loads this
+   file. Two jobs:
+   1. Lets folder links like "works/one/" work when you open the site offline from your computer.
+   2. Runs the binder-divider accordion (scroll-driven; hover and tap also work). */
+(function () {
+  'use strict';
+
+  /* 1. Offline folder links.
+     On a web server, "works/one/" opens works/one/index.html automatically.
+     Opened straight from a folder (file://), browsers don't, so add index.html. */
+  if (location.protocol === 'file:') {
+    var links = document.querySelectorAll('a[href]');
+    for (var i = 0; i < links.length; i++) {
+      var href = links[i].getAttribute('href');
+      if (/^[a-z][a-z0-9+.\-]*:/i.test(href) || href.charAt(0) === '#') continue; // skip http:, mailto:, #top
+      var cut = href.search(/[?#]/);
+      var path = cut < 0 ? href : href.slice(0, cut);
+      var rest = cut < 0 ? '' : href.slice(cut);
+      if (path.slice(-1) === '/') links[i].setAttribute('href', path + 'index.html' + rest);
+    }
+  }
+
+  /* 2. Binder dividers, driven by scrolling.
+     Think of the dividers as one long page that scrolls normally: each divider is a
+     colored edge with its tab, followed by its content. Two rules make it a binder:
+       - a divider that would still be below the window stays tucked at the bottom
+       - a divider that would scroll off the top docks under the nav and stays there,
+         content fixed to its tab, while the next divider slides up over it
+     One pixel of scroll moves everything one pixel, so there is no dead scrolling.
+     Clicking or tapping a tab (or resting the mouse on it) scrolls to that divider. */
+  var runway = document.querySelector('.runway');
+  var stage = document.querySelector('.stage');
+  if (!runway || !stage || !document.documentElement.classList.contains('js')) return;
+
+  var hero = runway.querySelector('.hero');
+  var sheets = Array.prototype.slice.call(runway.querySelectorAll('.sheet'));
+  var tabs = Array.prototype.slice.call(runway.querySelectorAll('.sheet__tab'));
+  var N = sheets.length;
+  var H = [], C = [];                 // H: content height of each divider. C: running total of H.
+  var slope = [];                     // height of each divider's tilted edge under the middle of its tab, relative to the edge's centre
+  var total = 0, vh = 0, runTop = 0, edge = 13, tabH = 40, dock = 120, s = 0;
+  var h = sheets.map(function () { return 0; });   // visible content height of each divider right now
+  var ticking = false, lastScroll = 0;
+
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+  function px(name, fallback) {
+    var v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+    return isNaN(v) ? fallback : v;
+  }
+
+  function measure() {
+    vh = stage.offsetHeight;
+    tabH = px('--tab-h', 40);
+    edge = px('--lip', 12) + 1;                          // height of one divider's colored edge
+    dock = px('--header-h', 74) + 10 + px('--tab-overhang', 16) + tabH;   // top of the first docked edge; the gaps leave room for the tilt and for stickers hanging above the tabs
+    total = 0;
+    for (var i = 0; i < N; i++) {
+      H[i] = sheets[i].querySelector('.sheet__inner').offsetHeight;   // the content's own height
+      total += H[i];
+      C[i] = total;
+    }
+    var rail = runway.querySelector('.tabrail').getBoundingClientRect().left, w = stage.clientWidth;
+    for (i = 0; i < N; i++) {                            // tilted edges: find the edge's height under the middle of each tab
+      var tilt = parseFloat(getComputedStyle(tabs[i]).getPropertyValue('--tilt')) || 0;
+      var mid = rail + tabs[i].offsetLeft + tabs[i].offsetWidth / 2 - w / 2;
+      slope[i] = mid * Math.tan(tilt * Math.PI / 180);
+    }
+    runway.style.height = (vh + total) + 'px';           // exactly as much scrolling as the content needs
+    runTop = runway.getBoundingClientRect().top + window.pageYOffset;
+  }
+
+  function update() {
+    ticking = false;
+    s = clamp(window.pageYOffset - runTop, 0, total);
+    var natural = [], top = [], acc = 0, i;
+    for (i = 0; i < N; i++) {
+      natural[i] = (vh - N * edge) - s + acc;            // where this edge would be if the page just scrolled
+      acc += edge + H[i];
+      // tucked at the bottom at most, docked under the nav at least
+      top[i] = Math.min(vh - (N - i) * edge, Math.max(dock + i * edge, natural[i]));
+    }
+    stage.style.setProperty('--hy', (-s * 0.5).toFixed(1) + 'px');
+    for (i = 0; i < N; i++) {
+      var bottom = i < N - 1 ? top[i + 1] : vh;
+      h[i] = Math.max(0, bottom - top[i] - edge);        // how much of this divider's content shows above the next one
+      sheets[i].style.setProperty('--y', top[i].toFixed(1) + 'px');
+      sheets[i].classList.toggle('is-closed', h[i] < 1);
+      tabs[i].style.setProperty('--ty', (top[i] + slope[i] - tabH).toFixed(1) + 'px');
+      tabs[i].setAttribute('aria-expanded', h[i] > H[i] / 2 ? 'true' : 'false');
+    }
+  }
+  function request() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+
+  window.addEventListener('scroll', function () { lastScroll = Date.now(); cancelHover(); request(); }, { passive: true });
+  window.addEventListener('resize', function () { measure(); request(); });
+  window.addEventListener('load', function () { measure(); request(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); request(); });
+  measure(); update();
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function goTo(pos) { window.scrollTo({ top: runTop + pos, behavior: reduce ? 'auto' : 'smooth' }); }
+  function openTarget(i) { return C[i]; }                      // divider i fully shown
+  function closeTarget(i) { return i === 0 ? 0 : C[i - 1]; }   // back to the divider before it
+  function isCurrent(i) { return Math.abs(s - C[i]) < 3; }
+  function toggle(i) { goTo(isCurrent(i) ? closeTarget(i) : openTarget(i)); }
+
+  /* hover: only on devices with a real mouse, only for a deliberate pause,
+     and never because the page scrolled under a resting pointer. */
+  var canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  var hoverTimer = null;
+  function cancelHover() { if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; } }
+
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener('click', function (e) {
+      var fromMouse = e.detail > 0;
+      if (canHover && fromMouse && isCurrent(i)) return;   // already open from hovering; a click never closes it
+      toggle(i);
+    });
+    if (canHover) {
+      tab.addEventListener('mousemove', function (e) {
+        if (!(e.movementX || e.movementY)) return;         // pointer did not really move
+        if (Date.now() - lastScroll < 400 || hoverTimer || isCurrent(i)) return;
+        hoverTimer = setTimeout(function () { hoverTimer = null; goTo(openTarget(i)); }, 220);
+      });
+      tab.addEventListener('mouseleave', cancelHover);
+    }
+  });
+})();
+""")
+
+# ---------------------------------------------------------------- shared parts (head extras, header, footer)
+w("assets/js/shell.js", r"""/* DUSTIN DO: SHARED PARTS
+   ============================================================================
+   This ONE file holds everything that is the same on every page:
+     1. the extras in the <head> (stylesheet, icons, share tags)
+     2. the header and navigation
+     3. the footer
+   Change it here and every page updates. Each page keeps only its own <title>,
+   its own <meta name="description"> and its own content.
+
+   HOW TO EDIT
+     - Change the text and HTML between the backtick ( ` ) marks below.
+     - Never type a backtick or the two characters  $ {  inside the HTML.
+     - {{root}} is replaced with the right path back to the top folder of the site, so links work
+       from any page. {{home}} is the link to the home page. {{name}}, {{email}}, {{domain}}
+       and {{year}} come from the settings just below.
+     - To add a nav link, copy one <li> line in the header, then change its words, its
+       href, and its data-nav word (data-nav lights up the link on its own page).
+   ============================================================================ */
+(function () {
+  'use strict';
+
+  /* ---------------------------------------------------------------------------
+     1. SETTINGS
+     --------------------------------------------------------------------------- */
+  var SITE = {
+    name: 'Dustin Do',
+    domain: 'https://dustindo.com',    // your real address, with no slash at the end
+    email: 'hello@dustindo.com',
+    startYear: 2026                    // the footer shows 2026, and later 2026-2028
+  };
+
+  /* ---------------------------------------------------------------------------
+     2. HEAD EXTRAS (added to the <head> of every page)
+     --------------------------------------------------------------------------- */
+  var HEAD = `
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d5b399">
+<meta name="author" content="{{name}}">
+<link rel="icon" href="{{root}}assets/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="{{root}}site.webmanifest">
+<link rel="stylesheet" href="{{root}}assets/css/style.css">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{name}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:image" content="{{domain}}/assets/img/social-share.svg">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"{{name}}","url":"{{domain}}/","email":"{{email}}"}</script>
+`;
+
+  /* ---------------------------------------------------------------------------
+     3. HEADER AND NAVIGATION (appears where a page has <site-header></site-header>)
+     --------------------------------------------------------------------------- */
+  var HEADER = `
+<span id="top"></span>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <nav class="site-nav" aria-label="Main">
+    <a class="brand" href="{{home}}" data-nav="home">
+      <img src="{{root}}assets/img/logo.svg" width="44" height="44" alt="">
+      <span class="brand__text">Home</span>
+    </a>
+    <ul class="site-nav__links">
+      <li><a href="{{root}}works/" data-nav="works">Works</a></li>
+      <li><a href="{{root}}contact/" data-nav="contact">Contact</a></li>
+      <li><a href="{{root}}about/" data-nav="about">About</a></li>
+    </ul>
+  </nav>
+</header>
+`;
+
+  /* ---------------------------------------------------------------------------
+     4. FOOTER (appears where a page has <site-footer></site-footer>)
+     --------------------------------------------------------------------------- */
+  var FOOTER = `
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__brand">
+      <img src="{{root}}assets/img/logo.svg" width="56" height="56" alt="">
+      <p class="site-footer__name">{{name}}</p>
+      <p>Design portfolio.</p>
+    </div>
+    <nav aria-label="Footer">
+      <h2 class="site-footer__heading">Site</h2>
+      <ul>
+        <li><a href="{{home}}">Home</a></li>
+        <li><a href="{{root}}works/">Works</a></li>
+        <li><a href="{{root}}contact/">Contact</a></li>
+        <li><a href="{{root}}about/">About</a></li>
+      </ul>
+    </nav>
+    <div>
+      <h2 class="site-footer__heading">Say hello</h2>
+      <ul>
+        <li><a href="mailto:{{email}}">{{email}}</a></li>
+        <!-- Add your profiles below. Delete any you do not use. -->
+        <li><a href="https://www.linkedin.com/" rel="noopener" target="_blank">LinkedIn</a></li>
+        <li><a href="https://www.behance.net/" rel="noopener" target="_blank">Behance</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__legal">
+    <p>&copy; {{year}} {{name}}. All rights reserved.</p>
+    <p>All work, images and text on this site are the property of {{name}} unless noted otherwise. Do not copy, reproduce or redistribute without written permission.</p>
+    <p>This site does not use cookies, analytics or trackers.</p>
+    <p class="site-footer__credit">Designed by {{name}} <a class="to-top" href="#top">Back to top</a></p>
+  </div>
+</footer>
+`;
+
+  /* ===========================================================================
+     5. THE MACHINERY. You should not need to change anything below this line.
+     =========================================================================== */
+
+  // Where is the top folder of the site, seen from this page? (Read from the path of this very script tag.)
+  var script = document.currentScript;
+  var src = script ? script.getAttribute('src') : 'assets/js/shell.js';
+  var at = src.lastIndexOf('assets/js/');
+  var ROOT = at < 0 ? '' : src.slice(0, at);        // "", "../", "../../" or "/"
+  var HOME = ROOT || './';
+
+  // Which section of the site is this page in? (Used to highlight the current nav link.)
+  var base = new URL(ROOT || './', location.href).pathname;
+  var rel = location.pathname.indexOf(base) === 0 ? location.pathname.slice(base.length) : '';
+  var section = rel.split('/')[0].replace(/^index\.html?$/, '') || 'home';
+
+  var now = new Date().getFullYear();
+  var year = SITE.startYear < now ? SITE.startYear + '–' + now : String(now);
+
+  function esc(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  var descTag = document.querySelector('meta[name="description"]');
+  var VARS = {
+    root: ROOT, home: HOME, name: SITE.name, domain: SITE.domain, email: SITE.email, year: year,
+    title: esc(document.title), description: esc(descTag ? descTag.getAttribute('content') : '')
+  };
+  function fill(template) {
+    return template.replace(/\{\{(\w+)\}\}/g, function (all, key) { return VARS.hasOwnProperty(key) ? VARS[key] : all; });
+  }
+
+  // Add the head extras right now, while the browser is still reading the <head>, so the page never flashes unstyled.
+  var extra = '';
+  if (location.protocol.indexOf('http') === 0) {       // addresses only make sense on a real web server
+    var url = SITE.domain + '/' + rel.replace(/index\.html?$/, '');
+    extra = '<link rel="canonical" href="' + url + '"><meta property="og:url" content="' + url + '">';
+  }
+  document.documentElement.classList.add('js');
+  document.write(fill(HEAD) + extra);
+
+  // <site-header> and <site-footer> are filled in as the browser reads them.
+  function register(tag, template) {
+    if (!window.customElements || customElements.get(tag)) return;
+    var html = fill(template);
+    customElements.define(tag, class extends HTMLElement {
+      connectedCallback() {
+        this.innerHTML = html;
+        var marked = this.querySelectorAll('[data-nav]');
+        for (var i = 0; i < marked.length; i++) {
+          if (marked[i].getAttribute('data-nav') === section) marked[i].setAttribute('aria-current', 'page');
+        }
+      }
+    });
+  }
+  register('site-header', HEADER);
+  register('site-footer', FOOTER);
+
+  // Last, load the page behaviors (the binder dividers and offline links).
+  document.addEventListener('DOMContentLoaded', function () {
+    var behaviors = document.createElement('script');
+    behaviors.src = ROOT + 'assets/js/site.js';
+    behaviors.onerror = function () { document.documentElement.classList.replace('js', 'no-js'); };   // plain stacked layout if it cannot load
+    document.body.appendChild(behaviors);
+  });
+})();
+""")
+
+# ---------------------------------------------------------------- sticker placeholders
+def star(cx, cy, R, r, n, rot=-90):
+    import math
+    pts = []
+    for k in range(n * 2):
+        ang = math.radians(rot + k * 180 / n)
+        rad = R if k % 2 == 0 else r
+        pts.append(f"{cx + rad * math.cos(ang):.1f},{cy + rad * math.sin(ang):.1f}")
+    return " ".join(pts)
+
+def sticker(name, body_white, body_color, extra=""):
+    w(f"assets/img/stickers/{name}.svg", f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+<title>{name} placeholder sticker</title>
+<g fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round">{body_white}</g>
+<g stroke="none">{body_color}</g>
+{extra}</svg>
+""")
+
+TXT = 'text-anchor="middle" font-family="Georgia,serif" font-weight="700" fill="#2b1d14"'
+star_pts = star(50, 52, 40, 21, 5)
+sticker("tab-one", f'<polygon points="{star_pts}"/>', f'<polygon points="{star_pts}" fill="#e9c46a"/>',
+        f'<text x="50" y="63" font-size="34" {TXT}>1</text>\n')
+sticker("tab-two",
+        '<rect x="12" y="14" width="76" height="52" rx="20"/><polygon points="30,62 24,88 52,64"/>',
+        '<rect x="12" y="14" width="76" height="52" rx="20" fill="#d98a9a"/><polygon points="30,62 24,88 52,64" fill="#d98a9a"/>',
+        f'<text x="50" y="52" font-size="34" {TXT}>2</text>\n')
+sticker("tab-three", '<polygon points="50,9 91,50 50,91 9,50"/>', '<polygon points="50,9 91,50 50,91 9,50" fill="#b7d3a8"/>',
+        f'<text x="50" y="62" font-size="34" {TXT}>3</text>\n')
+sticker("tab-misc", '<circle cx="50" cy="50" r="39"/>', '<circle cx="50" cy="50" r="39" fill="#f2e3c6"/>',
+        '<g fill="#2b1d14"><circle cx="37" cy="42" r="5"/><circle cx="63" cy="42" r="5"/></g>\n'
+        '<path d="M31 58 Q50 78 69 58" fill="none" stroke="#2b1d14" stroke-width="5" stroke-linecap="round"/>\n')
+burst = star(60, 60, 56, 41, 14)
+w("assets/img/stickers/sticker-example.svg", f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+<title>Example sticker for a divider</title>
+<polygon points="{burst}" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+<polygon points="{burst}" fill="#f4a6b7"/>
+<text x="60" y="70" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="30" fill="#2b1d14">NEW!</text>
+</svg>
+""")
+
+# ---------------------------------------------------------------- README
+w("README.txt", f"""DUSTIN DO SITE: HOW TO USE AND EDIT
+====================================
+Open index.html in any browser. It works with no internet connection.
+Edit any file in a plain text editor, save, and refresh the browser.
+
+FOLDERS
+  index.html              Home (hero + scroll-driven binder dividers)
+  works/index.html        Works list
+  works/one/index.html    Project pages (also two, three, misc)
+  contact/ and about/     Each has an index.html
+  assets/js/shell.js      THE SHARED PARTS: head extras, header + nav, footer (edit once, every page updates)
+  assets/css/style.css    All colors, sizes, breakpoints (see the top of the file)
+  assets/js/site.js       Small script (accordion, offline links). Loaded by shell.js.
+  assets/img/             Logo, favicon and placeholder images (replace them)
+  assets/img/stickers/    Placeholder stickers for the tabs and dividers (replace them)
+
+SHARED HEAD, HEADER, NAV AND FOOTER (ONE FILE)
+  Open assets/js/shell.js. It has four labelled sections: settings (name, domain, email),
+  head extras, header + nav, and footer. The header and footer are plain HTML between
+  backtick marks. Change them there and every page changes.
+
+  Every page is now just this:
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <title>About | Dustin Do</title>
+    <meta name="description" content="A sentence about this page.">
+    <script src="../assets/js/shell.js"></script>
+    </head>
+    <body>
+    <site-header></site-header>
+    <main id="main"> ...this page's own content... </main>
+    <site-footer></site-footer>
+    </body>
+    </html>
+  The only thing that changes is the path in the script line: no ../ for the home page,
+  ../ for works, contact and about, ../../ for the project pages. To make a new page, copy an
+  existing one and change the title, description and content.
+
+  Why the title and description stay in each page: every page needs its own, and search
+  engines and link previews read them straight from the page.
+
+  Good to know: the header, nav and footer are added by JavaScript. Visitors with JavaScript
+  turned off would not see them, and some link-preview robots do not run JavaScript, so they read
+  only the title and description in each page. If you want a picture to show in link previews,
+  paste this into the <head> of the pages you share (home first), above the script line:
+    <meta property="og:image" content="https://your-domain.com/assets/img/your-1200x630-image.jpg">
+
+URLS
+  Each page is a folder containing index.html, so on a web server the address is
+  /works/one/ (no .html). Offline, site.js quietly adds index.html to folder links.
+
+UPLOAD (FTP)
+  Upload everything inside this folder to your web root, including the hidden
+  .htaccess file, 404.html, robots.txt, sitemap.xml and site.webmanifest.
+
+REPLACE THESE PLACEHOLDERS
+  * Name, domain and email: the settings at the top of assets/js/shell.js. Also search
+    sitemap.xml and robots.txt for dustindo.com, and the contact page for the email.
+  * LinkedIn / Behance links: in the footer in shell.js, and on the contact page.
+  * All text on the project, about and contact pages.
+  * assets/img/social-share.svg is used by link previews. Many networks want a
+    1200x630 JPG or PNG, so swap in one and update the og:image line in shell.js.
+
+STICKERS ON THE TABS
+  Each tab button in index.html holds an <img class="tab-sticker">. Swap the file in src for your
+  own image (a PNG or WebP with a transparent background, ideally square, about 200x200 so it
+  stays crisp on high-density screens). The sticker is centered on the tab and hangs above and
+  below it. It is sized from the tab's height (--tab-h, 40px), not its width, so it looks the same
+  on phones and desktops. A square or roughly square sticker is best on phones, where each tab
+  is about 85px wide.
+  Per-tab tweaks go in that button's style attribute:
+    --sticker-h   height in px (default is 1.7 times the tab height)
+    --sx / --sy   nudge sideways / up and down in px (default --sy is -6px)
+    --sr          tilt, for example 6deg
+  In style.css, :root has --sticker-h (the default size) and --tab-overhang (keeps docked tabs
+  far enough below the nav that hanging stickers are not hidden by it).
+  The tab's words (one, two, three, misc) stay in the page for screen readers. To show words
+  instead of a sticker, delete the <img> and remove has-sticker from that button's class.
+
+STICKERS ON THE DIVIDERS
+  Each <article class="sheet"> in index.html has a <div class="sheet__stickers"> frame. Put
+  <img class="sticker" ...> lines inside it. Placement is set in the style attribute:
+    --l or --r    distance from the left or right edge of the content area, in % (works on any screen)
+    --t or --b    distance from the top or bottom edge, in px (negative hangs outside the divider)
+    --w           width in px        --rot   tilt in degrees
+  The frame is never clipped, so stickers can hang over the divider's edge, over the divider
+  above it, and past the content area. The stickers tilt along with their divider. Divider one
+  has a demo sticker; delete that <img> line when you have your own.
+  Two limits: nothing can show outside the browser window itself, and the dividers are trimmed at
+  the bottom edge of the window so they never spill onto the footer.
+
+IMAGE SIZES (CONTENT IS CAPPED AT 1600 PX WIDE)
+  Hero ...................... 1600 x 900   (optional 3200 x 1800 for retina)
+  Project / divider images .. 1600 x 1000
+  Portrait .................. 800 x 1000
+  Colors stretch edge to edge on any screen; images never grow past 1600 px,
+  so they are never stretched on 2K and 4K monitors. Use JPG or WebP at about
+  80% quality. When you swap an image, keep the file name or edit the src.
+
+FOCAL POINT
+  Each image tag has style="--fx:800;--fy:380;--iw:1600;--ih:900". fx and fy are
+  the pixel position of the spot to keep centered when the frame is cropped
+  (for example on a phone). iw and ih are the image's real pixel size.
+
+DIVIDER TILT
+  Each divider, with all of its content, is tilted by the --tilt value in its style
+  attribute in index.html (for example --tilt:0.45deg). Positive leans clockwise,
+  negative the other way. Keep them between 0.1deg and 0.6deg for a casual,
+  hand-placed look. The tab for each divider (further down the same block) has the
+  same --tilt value, so change both together.
+
+CHANGING COLORS
+  Divider colors: the style="--c:#8fa58f" on each <article class="sheet"> and its tab
+  in index.html, and the matching color in works/index.html and each project page.
+  Everything else: the :root block at the top of assets/css/style.css.
+""")
+
+print("built")

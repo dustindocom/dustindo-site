@@ -57,7 +57,7 @@
 <header class="site-header">
   <nav class="site-nav" aria-label="Main">
     <a class="brand" href="{{home}}" data-nav="home">
-      <img src="{{root}}assets/img/logo.svg" width="44" height="44" alt="">
+      <img src="{{root}}assets/img/ddlogo.svg" width="44" height="44" alt="">
       <span class="brand__text">Home</span>
     </a>
     <ul class="site-nav__links">
@@ -76,7 +76,7 @@
 <footer class="site-footer">
   <div class="site-footer__inner">
     <div class="site-footer__brand">
-      <img src="{{root}}assets/img/logo.svg" width="56" height="56" alt="">
+      <img src="{{root}}assets/img/ddlogomark.svg" width="56" height="56" alt="">
       <p class="site-footer__name">{{name}}</p>
       <p>Design portfolio.</p>
     </div>
