@@ -1,44 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" class="no-js">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dustin Do</title>
 <meta name="description" content="Dustin Do: design portfolio.">
-<meta name="author" content="Dustin Do">
-<meta name="theme-color" content="#d5b399">
-<link rel="canonical" href="https://dustindo.com/">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Dustin Do">
-<meta property="og:title" content="Dustin Do">
-<meta property="og:description" content="Dustin Do: design portfolio.">
-<meta property="og:url" content="https://dustindo.com/">
-<meta property="og:image" content="https://dustindo.com/assets/img/social-share.svg">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="manifest" href="site.webmanifest">
-<link rel="stylesheet" href="assets/css/style.css">
-<script>document.documentElement.className = 'js';</script>
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Person","name":"Dustin Do","url":"https://dustindo.com/","email":"hello@dustindo.com","jobTitle":"Designer"}
-</script>
+<script src="assets/js/shell.js"></script>
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<div id="top"></div>
-<header class="site-header">
-  <nav class="site-nav" aria-label="Main">
-    <a class="brand" href="./" aria-current="page">
-      <img src="assets/img/ddlogo.svg" alt="Dustin Do logo">
-      <span class="brand__text" style="display: none;">DD</span>
-    </a>
-    <ul class="site-nav__links">
-      <li><a href="works/">Works</a></li>
-      <li><a href="about/">About</a></li>
-      <li><a href="contact/">Contact</a></li>
-    </ul>
-  </nav>
-</header>
+<site-header></site-header>
 <main id="main">
 <div class="runway" id="work">
   <div class="stage">
@@ -47,7 +16,7 @@
         <!-- HERO IMAGE. Focal point: --fx and --fy are the pixel (x, y) of the spot in the image that should stay
              near the centre when the window is resized. --iw and --ih are the image's real pixel width and height.
              Change all four together if you swap the image. -->
-        <img class="focal hero__img" src="assets/img/under-construction.gif" width="1600" height="900" alt="Four colored binder dividers fanned out" style="--fx:800;--fy:380;--iw:1600;--ih:900" decoding="async">
+        <img class="focal hero__img" src="assets/img/hero.svg" width="1600" height="900" alt="Four colored binder dividers fanned out" style="--fx:800;--fy:380;--iw:1600;--ih:900" decoding="async">
         <div class="hero__text">
           <h1>Dustin Do</h1>
           <p>Design portfolio</p>
@@ -55,7 +24,14 @@
       </div>
     </section>
     <div class="stack">
-    <article class="sheet" id="sheet-one" style="--c:#edd08a;--i:1;--col:1;--tilt:0.45deg">
+    <article class="sheet" id="sheet-one" style="--c:#8fa58f;--i:1;--col:1;--tilt:0.45deg">
+      <div class="sheet__stickers" aria-hidden="true">
+        <!-- STICKERS ON THIS DIVIDER. Put <img class="sticker"> lines in here. This frame matches the content area and is never clipped.
+             --l or --r : distance from the left or right of the content area (use %, so it works on every screen)
+             --t or --b : distance from the top or bottom edge in px (a negative number hangs outside the divider)
+             --w : width in px      --rot : tilt in degrees -->
+        <img class="sticker" src="assets/img/stickers/sticker-example.svg" alt="" width="120" height="120" style="--r:3%;--t:-46px;--w:112px;--rot:9deg" draggable="false">
+      </div>
       <div class="sheet__body" id="panel-one">
         <div class="sheet__inner">
           <figure class="sheet__figure">
@@ -70,6 +46,7 @@
       </div>
     </article>
     <article class="sheet" id="sheet-two" style="--c:#d3a84f;--i:2;--col:2;--tilt:-0.2deg">
+      <div class="sheet__stickers" aria-hidden="true"></div>
       <div class="sheet__body" id="panel-two">
         <div class="sheet__inner">
           <figure class="sheet__figure">
@@ -84,6 +61,7 @@
       </div>
     </article>
     <article class="sheet" id="sheet-three" style="--c:#7d97b3;--i:3;--col:3;--tilt:0.6deg">
+      <div class="sheet__stickers" aria-hidden="true"></div>
       <div class="sheet__body" id="panel-three">
         <div class="sheet__inner">
           <figure class="sheet__figure">
@@ -98,6 +76,7 @@
       </div>
     </article>
     <article class="sheet" id="sheet-misc" style="--c:#9b7b9a;--i:4;--col:4;--tilt:-0.35deg">
+      <div class="sheet__stickers" aria-hidden="true"></div>
       <div class="sheet__body" id="panel-misc">
         <div class="sheet__inner">
           <figure class="sheet__figure">
@@ -112,49 +91,31 @@
       </div>
     </article>
     </div>
-    <!-- The tabs live in their own row so they can dock under the nav while the pages scroll beneath. -->
+    <!-- The tabs live in their own row so they can dock under the nav while the pages scroll beneath.
+         STICKER LABELS: each tab holds a sticker <img class="tab-sticker">. Swap the file in src for your own image.
+         It is centered on the tab and may hang above and below it. Per-tab tweaks go in that button's style attribute:
+         --sticker-h (height, default is 1.7 times the tab height), --sx / --sy (nudge sideways / up and down in px), --sr (tilt). -->
     <div class="tabrail">
-      <button class="sheet__tab" type="button" style="--c:#edd08a;--col:1;--tilt:0.45deg" aria-expanded="false" aria-controls="panel-one" top: -2px; width: 80%;><img src="assets/img/va-tab.png" alt="Various Artists"></button>
-      <button class="sheet__tab" type="button" style="--c:#d3a84f;--col:2;--tilt:-0.2deg" aria-expanded="false" aria-controls="panel-two">two</button>
-      <button class="sheet__tab" type="button" style="--c:#7d97b3;--col:3;--tilt:0.6deg" aria-expanded="false" aria-controls="panel-three">three</button>
-      <button class="sheet__tab" type="button" style="--c:#9b7b9a;--col:4;--tilt:-0.35deg" aria-expanded="false" aria-controls="panel-misc">misc</button>
+      <button class="sheet__tab has-sticker" type="button" style="--c:#8fa58f;--col:1;--tilt:0.45deg;--sr:-6deg" aria-expanded="false" aria-controls="panel-one">
+        <span class="sheet__tab-label">one</span>
+        <img class="tab-sticker" src="assets/img/stickers/tab-one.svg" width="100" height="100" alt="" draggable="false">
+      </button>
+      <button class="sheet__tab has-sticker" type="button" style="--c:#d3a84f;--col:2;--tilt:-0.2deg;--sr:4deg" aria-expanded="false" aria-controls="panel-two">
+        <span class="sheet__tab-label">two</span>
+        <img class="tab-sticker" src="assets/img/stickers/tab-two.svg" width="100" height="100" alt="" draggable="false">
+      </button>
+      <button class="sheet__tab has-sticker" type="button" style="--c:#7d97b3;--col:3;--tilt:0.6deg;--sr:-3deg" aria-expanded="false" aria-controls="panel-three">
+        <span class="sheet__tab-label">three</span>
+        <img class="tab-sticker" src="assets/img/stickers/tab-three.svg" width="100" height="100" alt="" draggable="false">
+      </button>
+      <button class="sheet__tab has-sticker" type="button" style="--c:#9b7b9a;--col:4;--tilt:-0.35deg;--sr:7deg" aria-expanded="false" aria-controls="panel-misc">
+        <span class="sheet__tab-label">misc</span>
+        <img class="tab-sticker" src="assets/img/stickers/tab-misc.svg" width="100" height="100" alt="" draggable="false">
+      </button>
     </div>
   </div>
 </div>
 </main>
-<footer class="site-footer">
-  <div class="site-footer__inner">
-    <div class="site-footer__brand">
-      <img src="assets/img/ddlogomark.svg" width="56" height="56" alt="Dustin Do Logo Mark">
-      <p class="site-footer__name">Dustin Do</p>
-      <p>Design portfolio.</p>
-    </div>
-    <nav aria-label="Footer">
-      <h2 class="site-footer__heading">Site</h2>
-      <ul>
-        <li><a href="./">Home</a></li>
-        <li><a href="works/">Works</a></li>
-        <li><a href="about/">About</a></li>
-        <li><a href="contact/">Contact</a></li>
-      </ul>
-    </nav>
-    <div>
-      <h2 class="site-footer__heading">Say hello</h2>
-      <ul>
-        <li><a href="mailto:me@dustindo.com">hello@dustindo.com</a></li>
-        <!-- Add your profiles below. Delete any you do not use. -->
-        <li><a href="https://www.linkedin.com/" rel="noopener" target="_blank">LinkedIn</a></li>
-        <li><a href="https://www.behance.net/" rel="noopener" target="_blank">Behance</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="site-footer__legal">
-    <p>&copy; <span data-year>2026</span> Dustin Do. All rights reserved.</p>
-    <p>All work, images and text on this site are the property of Dustin Do unless noted otherwise. Do not copy, reproduce or redistribute without written permission.</p>
-    <p>This site does not use cookies, analytics or trackers.</p>
-    <p class="site-footer__credit">Designed by Dustin Do <a class="to-top" href="#top">Back to top</a></p>
-  </div>
-</footer>
-<script src="assets/js/site.js"></script>
+<site-footer></site-footer>
 </body>
 </html>

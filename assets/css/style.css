@@ -30,6 +30,8 @@
 
   --header-h: 74px;         /* height of the floating nav area */
   --tab-h: 40px;            /* height of a binder tab */
+  --tab-overhang: 16px;     /* how far a tab sticker may hang above its tab; docked tabs sit this much lower so stickers clear the nav */
+  --sticker-h: calc(var(--tab-h) * 1.7);   /* default height of a tab sticker (its width follows the image) */
   --lip: 12px;              /* colored edge of each divider when closed */
   --ease: cubic-bezier(.22, .8, .2, 1);
 }
@@ -46,6 +48,7 @@ body {
   font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
 img { max-width: 100%; height: auto; display: block; }
 a { color: inherit; text-underline-offset: 0.2em; }
@@ -54,6 +57,7 @@ p { margin: 0 0 1em; max-width: 68ch; }
 :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
 ::selection { background: var(--nav-bg); }
 
+site-header, site-footer { display: contents; }   /* shared parts injected by assets/js/shell.js; no layout box of their own */
 .skip-link { position: absolute; left: 12px; top: -80px; z-index: 200; background: var(--ink); color: #fff; padding: .6em 1em; border-radius: 8px; }
 .skip-link:focus { top: 12px; }
 
@@ -87,9 +91,9 @@ p { margin: 0 0 1em; max-width: 68ch; }
   backdrop-filter: grayscale(82%);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; }
-.brand img { margin-top: -10px; margin-bottom: -10px; height: 38px; }
+.brand img { border-radius: 10px; }
 .site-nav__links { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(14px, 3vw, 40px); }
-.site-nav__links a { text-decoration: none; padding: .5em .2em; font-weight: 500; border-bottom: 2px solid transparent; color:#ffffff;}
+.site-nav__links a { text-decoration: none; padding: .5em .2em; font-weight: 500; border-bottom: 2px solid transparent; }
 .site-nav__links a:hover, .site-nav a[aria-current="page"] { border-bottom-color: var(--ink); }
 .brand[aria-current="page"] { border-bottom: 0; }
 @media (max-width: 480px) {
@@ -105,10 +109,13 @@ p { margin: 0 0 1em; max-width: 68ch; }
 .runway {
   --step: max(380px, 55svh);                       /* scroll distance per divider */
   position: relative;
+  overflow-x: clip;                                  /* dividers are wider than the window (for the tilt); never let that scroll sideways */
   height: calc(100svh + 4 * var(--step));
   margin-top: calc(-1 * var(--header-h));          /* hero runs under the floating nav */
 }
-.stage { position: sticky; top: 0; height: 100svh; overflow: hidden; background: var(--hero-bg); }
+/* The stage is trimmed at its bottom edge only (so the dividers never spill onto the footer). Top and sides are
+   left open so stickers can hang outside their dividers. */
+.stage { position: sticky; top: 0; height: 100svh; clip-path: inset(-600px -600px 0 -600px); background: var(--hero-bg); }
 
 .hero { position: absolute; inset: 0; transform: translateY(var(--hy, 0px)); }   /* drifts up at half speed */
 .hero__box {
@@ -159,6 +166,7 @@ p { margin: 0 0 1em; max-width: 68ch; }
   pointer-events: none;
 }
 .sheet__tab {
+  position: relative; overflow: visible;             /* overflow stays visible so a sticker can hang outside the tab */
   grid-column: var(--col); grid-row: 1; pointer-events: auto;
   transform: translateY(var(--ty, 100svh)) rotate(var(--tilt, 0deg));   /* --ty set by site.js; tilts with its divider */
   transform-origin: 50% 100%;
@@ -171,7 +179,43 @@ p { margin: 0 0 1em; max-width: 68ch; }
   cursor: pointer;
   transition: translate .2s var(--ease), filter .2s;
 }
-.sheet__tab:hover { translate: 0 -0px; filter: brightness(1.06); }
+.sheet__tab:hover { translate: 0 -3px; filter: brightness(1.06); }
+/* The tab reaches a few pixels down into its divider's colored edge, so when the tab lifts 3px on hover
+   there is no gap between the two. Keep this just a little more than the hover lift (3px): a longer reach
+   shows as a lighter patch, because it sits above the shadow the next divider casts on this one. */
+.sheet__tab::after {
+  content: ""; position: absolute; z-index: 0;
+  left: -1px; right: -1px; top: 100%;
+  height: 5px;
+  background: var(--c);
+}
+
+/* Sticker labels on the tabs. The sticker is sized from the tab's HEIGHT (not its width), so it looks the same on
+   phones and desktops, and it is centered on the tab, hanging above and below it. */
+.has-sticker .sheet__tab-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tab-sticker {
+  position: absolute; z-index: 1; left: 50%; top: 50%;
+  height: var(--sticker-h); width: auto; max-width: none;
+  transform: translate(-50%, -50%) translate(var(--sx, 0px), var(--sy, -6px)) rotate(var(--sr, 0deg));
+  filter: drop-shadow(0 2px 2px rgba(43, 29, 20, .35));
+  -webkit-user-drag: none; user-select: none; pointer-events: none;
+}
+
+/* Stickers on a divider. Put <img class="sticker"> inside the divider's .sheet__stickers frame. The frame matches the
+   content area (the same width on every screen), is never clipped, and tilts with the divider. */
+.sheet__stickers {
+  position: absolute; z-index: 6; pointer-events: none;
+  left: 10vw; right: 10vw; top: 0; bottom: 0;
+  max-width: var(--content); margin: 0 auto;
+}
+.sticker {
+  position: absolute; max-width: none; height: auto;
+  left: var(--l, auto); right: var(--r, auto); top: var(--t, auto); bottom: var(--b, auto);
+  width: var(--w, 96px);
+  transform: rotate(var(--rot, 0deg));
+  filter: drop-shadow(0 3px 3px rgba(43, 29, 20, .35));
+  pointer-events: none; -webkit-user-drag: none; user-select: none;
+}
 
 /* the content is exactly as tall as it is; it never scrolls inside itself */
 .sheet.is-closed .sheet__body { visibility: hidden; }
@@ -179,7 +223,7 @@ p { margin: 0 0 1em; max-width: 68ch; }
   position: relative;
   max-width: var(--content); margin: 0 auto;
   padding: clamp(20px, 3vw, 48px) var(--gutter);
-  display: grid; gap: clamp(14px, 3vw, 48px); align-items: center;  top: -11px;
+  display: grid; gap: clamp(14px, 3vw, 48px); align-items: center;
 }
 /* paper texture sits on top of the color */
 .sheet__inner::before {
@@ -187,7 +231,8 @@ p { margin: 0 0 1em; max-width: 68ch; }
   background-image: url("../img/paper.svg"); background-size: 480px 480px;
   mix-blend-mode: multiply; opacity: .55;
 }
-.sheet__figure { margin: 0; position: relative; z-index: 1; aspect-ratio: 16 / 10; max-height: 60svh; width: 100%; overflow: hidden; border-radius: 6px; box-shadow: 0 10px 30px rgba(43, 29, 20, .3); }
+.sheet__figure { margin: 0; position: relative; z-index: 1; aspect-ratio: 16 / 10; max-height: 60svh; width: 100%; border-radius: 6px; box-shadow: 0 10px 30px rgba(43, 29, 20, .3); }
+.sheet__figure .focal { border-radius: inherit; }
 .sheet__copy { position: relative; z-index: 4; }
 .sheet__copy h2 { font-size: clamp(1.6rem, 3vw, 2.6rem); }
 
@@ -213,7 +258,7 @@ p { margin: 0 0 1em; max-width: 68ch; }
 
 /* no JavaScript: hero, then the dividers stacked open one after another */
 .no-js .runway { height: auto; margin-top: 0; }
-.no-js .stage { position: static; height: auto; overflow: visible; }
+.no-js .stage { position: static; height: auto; clip-path: none; }
 .no-js .hero { position: relative; height: 70svh; }
 .no-js .stack { position: static; }
 .no-js .sheet { position: relative; left: 0; right: 0; padding-inline: 0; transform: none; }
@@ -290,9 +335,9 @@ p { margin: 0 0 1em; max-width: 68ch; }
   * { transition-duration: .01ms !important; transition-delay: 0s !important; animation: none !important; }
 }
 @media print {
-  .site-header, .skip-link, .fold-back, .to-top { display: none; }
+  .site-header, .skip-link, .fold-back, .to-top, .sheet__stickers { display: none; }
   .site-footer { background: none; color: #000; }
-  .runway { height: auto; margin: 0; } .stage { position: static; height: auto; overflow: visible; }
+  .runway { height: auto; margin: 0; } .stage { position: static; height: auto; clip-path: none; }
   .hero { position: relative; height: 40vh; } .stack { position: static; } .sheet { position: relative; left: 0; right: 0; padding-inline: 0; transform: none; margin-top: 40px; } .sheet::after { display: none; } .hero { transform: none; } .tabrail { display: none; }
 }
 

@@ -1,9 +1,9 @@
 /* DUSTIN DO: SITE SCRIPT
    Small on purpose. You do not need to edit this file; all text, colors and
-   images live in the HTML and CSS. Three jobs:
+   images live in the HTML and CSS, and the header, nav and footer live in shell.js, which also loads this
+   file. Two jobs:
    1. Lets folder links like "works/one/" work when you open the site offline from your computer.
-   2. Fills in the current year in the footer.
-   3. Runs the binder-divider accordion (scroll-driven; hover and tap also work). */
+   2. Runs the binder-divider accordion (scroll-driven; hover and tap also work). */
 (function () {
   'use strict';
 
@@ -22,11 +22,7 @@
     }
   }
 
-  /* 2. Footer year */
-  var years = document.querySelectorAll('[data-year]');
-  for (var y = 0; y < years.length; y++) years[y].textContent = new Date().getFullYear();
-
-  /* 3. Binder dividers, driven by scrolling.
+  /* 2. Binder dividers, driven by scrolling.
      Think of the dividers as one long page that scrolls normally: each divider is a
      colored edge with its tab, followed by its content. Two rules make it a binder:
        - a divider that would still be below the window stays tucked at the bottom
@@ -58,7 +54,7 @@
     vh = stage.offsetHeight;
     tabH = px('--tab-h', 40);
     edge = px('--lip', 12) + 1;                          // height of one divider's colored edge
-    dock = px('--header-h', 74) + 10 + tabH;             // top of the first docked edge; the gap leaves room for the tilt
+    dock = px('--header-h', 74) + 10 + px('--tab-overhang', 16) + tabH;   // top of the first docked edge; the gaps leave room for the tilt and for stickers hanging above the tabs
     total = 0;
     for (var i = 0; i < N; i++) {
       H[i] = sheets[i].querySelector('.sheet__inner').offsetHeight;   // the content's own height
