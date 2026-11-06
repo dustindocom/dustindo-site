@@ -23,7 +23,7 @@ var BANNERS=[
   function(){return 'background:linear-gradient(135deg,#5B5F66 0 50%,#43474D 50% 100%)'}
 ];
 var AVPRESETS=[['rose','rings'],['teal','stripes'],['ochre','record'],['clay','dots'],['sage','split'],['slate','rings'],['mauve','stripes'],['graphite','dots']];
-
+ 
 var LOGO=function(w,h){return '<svg viewBox="4 2 261 179" width="'+w+'" height="'+h+'" fill="var(--accent)" fill-rule="evenodd" role="img" aria-label="VA by DD">'+
 '<path d="M182.89,147.16c.41.67.61,1.43.61,2.26,0,.78-.2,1.51-.61,2.17s-.97,1.19-1.69,1.57c.85.29,1.55.82,2.11,1.58.56.77.84,1.62.84,2.54,0,.83-.21,1.6-.62,2.3-.42.7-.97,1.25-1.66,1.63-.35.19-.74.34-1.18.43s-1.01.14-1.73.14h-7.01v-16.7h6.67c1.06,0,1.9.16,2.52.48.75.38,1.33.91,1.74,1.58v.02ZM182.13,151.21c.34-.54.5-1.14.5-1.8,0-.74-.19-1.38-.58-1.93-.38-.55-.87-.96-1.46-1.21-.45-.19-1.2-.29-2.26-.29h-5.52v6.86h5.95c.83,0,1.5-.13,1.99-.38.58-.29,1.03-.7,1.37-1.25h.01ZM182.75,159.22c.35-.58.53-1.22.53-1.91s-.18-1.37-.55-1.96c-.37-.58-.86-1.02-1.49-1.31-.48-.22-1.13-.34-1.94-.34h-6.48v7.22h6.17c.61,0,1.09-.03,1.44-.1s.66-.16.91-.29c.59-.3,1.06-.75,1.42-1.33v.02Z"/>'+
 '<path d="M189.64,145.09l5.93,8.93,5.88-8.93h1.06l-6.5,9.86v6.84h-.89v-6.84l-6.53-9.86h1.06,0Z"/>'+
@@ -32,7 +32,7 @@ var LOGO=function(w,h){return '<svg viewBox="4 2 261 179" width="'+w+'" height="
 '<path d="M54.88,134.33h47.82L178.19,3.59h-12.7l-69.15,119.74L53.05,48.33H5.23l49.65,86ZM83.9,122.82h-16.97L29.98,58.82h16.97s36.95,64,36.95,64Z"/>'+
 '<path d="M213.48,48.33h-47.77l-75.49,130.74h12.7l69.15-119.74,43.29,75h47.77l-49.65-86h0ZM184.5,59.84h16.97l36.95,64h-16.97s-36.95-64-36.95-64Z"/>'+
 '<path d="M171.95,91.61c-10.68,0-19.33,8.65-19.33,19.33s8.65,19.33,19.33,19.33,19.33-8.65,19.33-19.33-8.65-19.33-19.33-19.33ZM171.95,117.47c-3.61,0-6.53-2.92-6.53-6.53s2.92-6.53,6.53-6.53,6.53,2.92,6.53,6.53-2.92,6.53-6.53,6.53Z"/></svg>'};
-
+ 
 var P={
   home:'M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
   charts:'M5 20V10M12 20V4M19 20v-7',
@@ -59,7 +59,7 @@ var PAUSE='<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" a
 var NEXT='<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M6 5l10 7-10 7zM18 5h2v14h-2z"/></svg>';
 var PREV='<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M18 5L8 12l10 7zM4 5h2v14H4z"/></svg>';
 var DOTS='<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
-
+ 
 /* ---------- data (all names are made up) ---------- */
 var G={pop:'Pop / Indie',rock:'Rock / Alt',rnb:'R&B / Soul',elec:'Electronic',jazz:'Jazz / Funk',hip:'Hip-Hop',lat:'Latin',afro:'Afrobeats'};
 var GORDER=['hip','rnb','elec','pop','rock','lat','jazz','afro'];
@@ -82,10 +82,10 @@ var SONGS=SAMPLE.slice(),CAT={},CHARTS={all:[],byGenre:{},updated:null,live:fals
 SAMPLE.forEach(function(x){CAT[x.id]=x});
 var SB=function(id){return CAT[id]};
 var sart=function(x){return x&&x.art?"background:url('"+x.art+"') center/cover no-repeat,"+art(x.tone||'graphite').slice(11):art(x?x.tone:'graphite')};
-
+ 
 var DJS=VASeed.DJS.slice();
 var DB=function(id){for(var i=0;i<DJS.length;i++)if(DJS[i].id===id)return DJS[i]};
-
+ 
 /* ---------- state ---------- */
 var S={
   user:null,tab:'home',stack:[],sheet:null,pop:false,
@@ -95,12 +95,12 @@ var S={
   pinned:[],
   hot:[],booting:true,sg:{items:[],active:-1,open:false},
   playing:null,isPlaying:false,prog:0,
-  vt:'system',chartG:'all',crateQ:'',meTab:'tapes',xCount:2341,xState:'idle',xMuted:true,
+  vt:'system',chartG:'all',chartE:'all',chartD:'any',chartN:50,crateQ:'',meTab:'tapes',xCount:2341,xState:'idle',xMuted:true,
   avatar:0,banner:0,newName:false
 };
 var CTX={};
 var uid=0;
-
+ 
 /* ---------- storage + preferences ---------- */
 var Store=window.VAStore;
 var PREFS={sugg:null,recent:true};
@@ -169,7 +169,7 @@ function hydrate(){
     if(S.user)render({keep:1});
   });
 }
-
+ 
 /* ---------- derived ---------- */
 var tapeBy=function(id){for(var i=0;i<S.tapes.length;i++)if(S.tapes[i].id===id)return S.tapes[i]};
 var ownerName=function(t){return t.owner==='me'?S.user.name:(DB(t.owner)||{name:t.owner}).name};
@@ -199,7 +199,7 @@ var coverStyle=function(t){
   return 'background:'+g;
 };
 var sartBig=function(x){return x&&x.art?"background:url('"+x.art.replace('300x300','600x600')+"') center/cover no-repeat,"+art(x.tone||'graphite').slice(11):art(x?x.tone:'graphite')};
-
+ 
 /* ---------- components ---------- */
 function row(s,o){
   o=o||{};
@@ -212,7 +212,7 @@ function row(s,o){
    '<button class="rmain" data-a="play:'+s.id+':'+key+'" aria-label="Play '+esc(s.t)+' by '+esc(s.a)+'">'+
    (o.rank!=null||on||o.pad?'<div class="l">'+left+'</div>':'')+
    '<div class="art" style="'+sart(s)+'"></div>'+
-   '<div class="tx"><div class="ti ell">'+esc(s.t)+'</div><div class="su ell">'+sub+'</div></div></button>'+
+   '<div class="tx"><div class="ti ell">'+(s.e?'<span aria-label="Explicit" title="Explicit" style="display:inline-block;font-size:10px;font-weight:700;line-height:15px;padding:0 4px;margin-right:6px;border-radius:3px;background:var(--muted);color:var(--bg,#0D0F12);vertical-align:1px">E</span>':'')+esc(s.t)+'</div><div class="su ell">'+sub+'</div></div></button>'+
    '<button class="ib heart'+(liked?' liked':'')+'" data-a="like:'+s.id+'" aria-label="'+(liked?'Unlike':'Like')+'" aria-pressed="'+liked+'" style="color:'+(liked?'var(--hi)':'var(--text)')+'">'+ic('heart',22,{fill:liked?'currentColor':'none'})+'</button>'+
    '<button class="ib" data-a="more:'+s.id+':'+(o.tape||'')+'" aria-label="More options for '+esc(s.t)+'">'+DOTS+'</button></div>';
 }
@@ -223,7 +223,7 @@ function header(){
 function topbar(title,right){
   return '<div class="top"><button class="ib" style="color:var(--text)" data-a="back" aria-label="Back">'+ic('back',24)+'</button><div class="ttl">'+esc(title||'')+'</div><div style="min-width:44px;display:flex;justify-content:flex-end">'+(right||'')+'</div></div>';
 }
-
+ 
 /* ---------- views ---------- */
 function viewHome(){
   var favs=favTapes(), list=favs.length?favs:S.hot.map(tapeBy).filter(Boolean);
@@ -245,17 +245,40 @@ function viewHome(){
    '<section class="sec"><div class="sh" style="padding-bottom:4px"><h2>Most Mixed</h2><div class="cap">Songs in the most MixTapes</div></div>'+mmRows+'</section>'+
    '<section style="padding-top:26px"><div class="sh" style="padding-bottom:14px"><h2>DJs on the Rise</h2></div><div class="djs hs">'+djs+'</div></section>';
 }
-
-function viewCharts(){
-  var g=S.chartG;
-  var list=(g==='all'?CHARTS.all:(CHARTS.byGenre[g]||[])).map(SB).filter(Boolean).slice(0,g==='all'?25:15);
-  var ids=list.map(function(s){return s.id});
-  var chips='<button class="cb" data-a="cg:all" aria-pressed="'+(g==='all')+'">All</button>'+GORDER.map(function(k){return '<button class="cb" data-a="cg:'+k+'" aria-pressed="'+(g===k)+'">'+G[k]+'</button>'}).join('');
-  return '<div class="pagehead"><h1>Charts</h1><p>What\'s hot right now'+(g==='all'?', across every genre':' in '+G[g])+(CHARTS.live?'. Apple Music, updated '+new Date(CHARTS.updated).toLocaleDateString()+'.':'. Sample data: the live chart did not load.')+'</p></div>'+
-   '<div class="chips hs" role="group" aria-label="Genre">'+chips+'</div>'+
-   list.map(function(s,i){return row(s,{rank:i+1,key:'ch',list:ids})}).join('');
+ 
+/* Charts: era (All / Classics / Modern) → decade → genre. Song order in SONGS is hot chart first, then library popularity. */
+var DECS=['50s','60s','70s','80s','90s','00s','10s','20s'];
+var DECL={'50s':'50s & earlier','60s':'60s','70s':'70s','80s':'80s','90s':'90s','00s':'2000s','10s':'2010s','20s':'2020s'};
+var ERAL={all:'All',classics:'Classics',modern:'Modern'};
+function decEra(d){return DECS.indexOf(d)<DECS.indexOf('00s')?'classics':'modern'}
+function chartPool(e,d,g){
+  return SONGS.filter(function(x){
+    if(e!=='all'&&x.era!==e)return false;
+    if(d!=='any'&&x.dec!==d)return false;
+    if(g!=='all'&&x.g!==g)return false;
+    return true;
+  });
 }
-
+function viewCharts(){
+  var e=S.chartE,d=S.chartD,g=S.chartG,n=S.chartN;
+  var hotOnly=e==='all'&&d==='any';
+  var pool=hotOnly?(g==='all'?CHARTS.all:(CHARTS.byGenre[g]||[])).map(SB).filter(Boolean):chartPool(e,d,g);
+  var list=pool.slice(0,n),ids=list.map(function(s){return s.id});
+  var segE='<div style="padding:4px 20px 10px"><div class="seg" role="group" aria-label="Era">'+['all','classics','modern'].map(function(k){return '<button data-a="ce:'+k+'" aria-pressed="'+(e===k)+'">'+ERAL[k]+'</button>'}).join('')+'</div></div>';
+  var decs=(CHARTS.decades||[]).filter(function(k){return e==='all'||decEra(k)===e});
+  var chipsD=decs.length?'<div class="chips hs" role="group" aria-label="Decade"><button class="cb" data-a="cd:any" aria-pressed="'+(d==='any')+'">Any decade</button>'+decs.map(function(k){return '<button class="cb" data-a="cd:'+k+'" aria-pressed="'+(d===k)+'">'+DECL[k]+'</button>'}).join('')+'</div>':'';
+  var base=hotOnly?null:chartPool(e,d,'all');
+  var gs=GORDER.filter(function(k){return !base||k===g||base.some(function(x){return x.g===k})});
+  var chipsG='<div class="chips hs" role="group" aria-label="Genre"><button class="cb" data-a="cg:all" aria-pressed="'+(g==='all')+'">All genres</button>'+gs.map(function(k){return '<button class="cb" data-a="cg:'+k+'" aria-pressed="'+(g===k)+'">'+G[k]+'</button>'}).join('')+'</div>';
+  var what=(d!=='any'?DECL[d]:(e==='all'?'':ERAL[e]))+(g!=='all'?(d!=='any'||e!=='all'?' ':'')+G[g]:'');
+  var sub=hotOnly?'What\'s hot right now'+(g==='all'?', across every genre':' in '+G[g]):'The most played '+(what||'songs')+(e==='classics'&&d==='any'?', before '+(CHARTS.eraCutoff||2000):e==='modern'&&d==='any'?', '+(CHARTS.eraCutoff||2000)+' and later':'');
+  var src=CHARTS.live?'. Apple Music, updated '+new Date(CHARTS.updated).toLocaleDateString()+'.':'. Sample data: the live chart did not load.';
+  var more=pool.length>n?'<div style="padding:14px 20px 24px;text-align:center"><button class="pill" data-a="cmore">Show more <span class="muted">('+(pool.length-n)+')</span></button></div>':'';
+  var empty=!list.length?'<div class="empty"><b>No songs here yet</b>The library grows every few hours. Try another decade or genre.</div>':'';
+  return '<div class="pagehead"><h1>Charts</h1><p>'+sub+src+'</p></div>'+segE+chipsD+chipsG+
+   list.map(function(s,i){return row(s,{rank:i+1,key:'ch',list:ids})}).join('')+empty+more;
+}
+ 
 function appleLink(s,cls,inner,style){
   if(s.url) return '<a class="'+cls+'" href="'+esc(s.url)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;'+(style||'')+'">'+inner+'</a>';
   return '<button class="'+cls+'" data-a="apple" style="'+(style||'')+'">'+inner+'</button>';
@@ -354,7 +377,7 @@ function crateSearchSoon(ms){
   },ms);
 }
 function rowsFor(list,key){var ids=list.map(function(s){return s.id});return list.map(function(s){return row(s,{key:key,list:ids,pad:true})}).join('')}
-
+ 
 function viewMe(){
   var mt=mineTapes();
   var body;
@@ -370,7 +393,7 @@ function viewMe(){
    '<div class="mhead"><h1>'+esc(S.user.name)+'</h1><p>'+(isGuest()?'Shared name · anyone using Guest DJ can edit these MixTapes':(S.user.protected?'Locked name · ':'Open name · ')+'up to 12 songs per MixTape')+'</p></div>'+
    '<div style="padding:16px 20px 0"><div class="seg"><button data-a="metab:tapes" aria-pressed="'+(S.meTab==='tapes')+'">My MixTapes</button><button data-a="metab:liked" aria-pressed="'+(S.meTab==='liked')+'">Liked music ('+count+')</button></div></div>'+body;
 }
-
+ 
 function viewTape(id){
   var t=tapeBy(id); if(!t) return topbar('')+'<div class="empty"><b>MixTape not found</b></div>';
   var own=t.owner==='me', lim=limitOf(t), liked=S.likedTapes.indexOf(t.id)>=0, pinned=S.pinned.indexOf(t.id)>=0&&liked;
@@ -386,7 +409,7 @@ function viewTape(id){
    '<button class="round'+(pinned?' on':'')+(liked?'':'" disabled style="opacity:.4')+'" data-a="pintape:'+t.id+'" aria-label="'+(pinned?'Unpin':'Pin to top of Favorites')+'" aria-pressed="'+pinned+'">'+ic('pin',20,{fill:pinned?'currentColor':'none'})+'</button>'+
    '<button class="round" data-a="tapemore:'+t.id+'" aria-label="More options">'+DOTS+'</button></div>'+rows;
 }
-
+ 
 function viewDj(id){
   var d=DB(id)||{id:id,name:id,style:'',av:['graphite','dots']}, ts=S.tapes.filter(function(t){return t.owner===id});
   return topbar('')+
@@ -394,7 +417,7 @@ function viewDj(id){
    '<div class="sh" style="padding-top:22px"><h2>MixTapes</h2><div class="cap">'+ts.length+'</div></div><div class="tgrid" style="padding-top:0">'+
    ts.map(function(t){return '<button class="tg" data-a="tape:'+t.id+'"><div class="c" style="'+coverStyle(t)+'"></div><div class="n ell">'+esc(t.title)+'</div><div class="b">'+t.songs.length+' songs</div></button>'}).join('')+'</div>';
 }
-
+ 
 function viewSettings(){
   var seg=['system','light','dark'].map(function(v){return '<button data-a="theme:'+v+'" aria-pressed="'+(S.vt===v)+'">'+v[0].toUpperCase()+v.slice(1)+'</button>'}).join('');
   return topbar('Settings')+
@@ -404,7 +427,7 @@ function viewSettings(){
    '<div style="padding:4px 20px"><button class="pill ghost" style="width:100%" data-a="logout">'+ic('logout',20)+' Log out</button></div>'+
    '<p class="help" style="padding:16px 28px">Songs, charts and 30-second previews come from Apple Music. MixTapes, likes and your name are kept on this device until the database is connected.</p>';
 }
-
+ 
 function viewX(){
   var st=S.xState;
   var label=st==='deny'?'ACCESS DENIED':'SWIPE TO ENTER';
@@ -414,7 +437,7 @@ function viewX(){
    '<button class="xbtn" data-a="swipe">Swipe card</button>'+
    (S.xMuted?'':'<div style="position:absolute;left:0;right:0;bottom:150px;text-align:center;font-size:11px;color:#59626D">Muffled music from the other side</div>')+'</div>';
 }
-
+ 
 function viewSplash(){return '<div style="display:flex;align-items:center;justify-content:center;height:100%">'+LOGO(150,103)+'</div>'}
 function viewSignin(){
   return '<div class="signin">'+LOGO(150,103)+'<h1>Who\'s playing?</h1><p>Pick a DJ name, or leave it blank to join as Guest DJ. You can start building MixTapes right away.</p>'+
@@ -425,7 +448,7 @@ function viewSignin(){
    '<div class="help" id="uhelp">Without a password, anyone who signs in as this name can edit its playlists.</div><div class="err" id="uerr" role="alert"></div>'+
    '<button class="pill" type="submit" style="width:100%;margin-top:6px">Continue</button></form></div>';
 }
-
+ 
 /* ---------- sheets / overlays ---------- */
 function sheetHtml(){
   var sh=S.sheet; if(!sh) return '';
@@ -487,7 +510,7 @@ function playerHtml(){
    '<div class="ctl"><button class="sk" data-a="prev" aria-label="Previous">'+PREV+'</button><button class="pbtn" data-a="toggle" aria-label="'+(S.isPlaying?'Pause':'Play')+'">'+(S.isPlaying?PAUSE:PLAY).replace(/width="22" height="22"/,'width="28" height="28"')+'</button><button class="sk" data-a="next" aria-label="Next">'+NEXT+'</button></div>'+
    '<div style="text-align:center;margin-top:auto;padding-top:18px">'+appleLink(s,'pill ghost',ic('link',18)+' Listen on Apple Music','height:40px;font-size:14px')+'<div class="help" style="margin-top:10px">'+(S.sim?'No preview for this song, so playback is simulated.':'30-second previews from Apple Music.')+'</div></div></div>';
 }
-
+ 
 /* ---------- render ---------- */
 var lastSig='',scrolls={};
 function render(opts){
@@ -523,7 +546,7 @@ function render(opts){
   var nn=$('#newname'); if(nn&&!opts.noFocus) setTimeout(function(){nn.focus()},60);
   wireSignin();
 }
-
+ 
 /* ---------- actions ---------- */
 function toast(msg,undo){
   var t=$('#toast'); t.innerHTML='<div class="toast"><span>'+msg+'</span>'+(undo?'<button data-a="undo">Undo</button>':'')+'</div>';
@@ -577,7 +600,7 @@ function newTape(name){
 }
 function closeSheet(){S.sheet=null;S.pop=false}
 function go(v){S.stack.push(v);closeSheet()}
-
+ 
 function act(a,p,el,e){
   switch(a){
     case 'tab': S.tab=p[0];S.stack=[];closeSheet();if(p[0]!=='x')xStop();break;
@@ -646,7 +669,10 @@ function act(a,p,el,e){
       if(p[0]==='sugg')PREFS.sugg=p[1];
       if(p[0]==='recent'){PREFS.recent=p[1]==='1';if(!PREFS.recent){RECENT=[];try{localStorage.removeItem('va.recent')}catch(x){}}}
       savePrefs();break;
-    case 'cg': S.chartG=p[0];break;
+    case 'cg': S.chartG=p[0];S.chartN=50;break;
+    case 'ce': S.chartE=p[0];S.chartN=50;if(S.chartD!=='any'&&p[0]!=='all'&&decEra(S.chartD)!==p[0])S.chartD='any';break;
+    case 'cd': S.chartD=p[0];S.chartN=50;if(p[0]!=='any'&&S.chartE!=='all'&&decEra(p[0])!==S.chartE)S.chartE=decEra(p[0]);break;
+    case 'cmore': S.chartN+=50;break;
     case 'cq': S.crateQ=p.join(':');addRecent(S.crateQ);crateSearchSoon(0);break;
     case 'metab': S.meTab=p[0];break;
     case 'theme': S.vt=p[0];applyTheme();break;
@@ -664,7 +690,7 @@ function applyTheme(){
   var r=document.documentElement;
   if(S.vt==='system') r.removeAttribute('data-vt'); else r.setAttribute('data-vt',S.vt);
 }
-
+ 
 document.addEventListener('click',function(e){
   var el=e.target.closest('[data-a]'); if(!el) return;
   if(el.dataset.lpFired){delete el.dataset.lpFired;e.preventDefault();return}
@@ -680,7 +706,7 @@ document.addEventListener('pointerdown',function(e){
 ['pointerup','pointercancel','pointermove','pointerleave'].forEach(function(n){document.addEventListener(n,function(){clearTimeout(lpT)})});
 document.addEventListener('contextmenu',function(e){var el=e.target.closest('[data-lp]');if(el){e.preventDefault()}});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&(S.sheet||S.pop)){closeSheet();render({keep:1})}});
-
+ 
 document.addEventListener('focusin',function(e){if(e.target.id==='q')suggestSoon(false)});
 document.addEventListener('focusout',function(e){if(e.target.id==='q')setTimeout(function(){if(document.activeElement!==$('#q'))suggClose()},140)});
 document.addEventListener('mousedown',function(e){if(e.target.closest&&e.target.closest('#sugg'))e.preventDefault()});
@@ -725,7 +751,7 @@ function wireSignin(){
     });
   });
 }
-
+ 
 /* ---------- playback simulation + Studio X sound ---------- */
 setInterval(function(){
   if(!S.sim||!S.isPlaying||!S.playing) return;
@@ -733,7 +759,7 @@ setInterval(function(){
   if(S.prog>=1){step(1);render({keep:1});return}
   progUpdate();
 },200);
-
+ 
 var AC=null,xT=null;
 function xStart(){
   if(document.hidden||!document.hasFocus()) return;
@@ -767,14 +793,14 @@ function xGuard(force){
 document.addEventListener('visibilitychange',function(){xGuard()});
 window.addEventListener('blur',function(){xGuard(true)});
 window.addEventListener('pagehide',function(){xGuard(true)});
-
+ 
 function seedPlaying(){var ids=SONGS.slice(0,6).map(function(x){return x.id});S.playing=ids.length?{songId:ids[1]||ids[0],ctx:ids,ctxKey:'seed'}:null}
 function seedTapes(){seedPlaying()}
 var DATA_READY=VAApi.loadCharts().then(function(d){
   if(!d||!d.songs||!d.songs.length) throw new Error('empty');
   d.songs.forEach(function(x){x.tone=TONE_G[x.g]||'graphite';CAT[x.id]=x});
   SONGS=d.songs.slice();
-  CHARTS={all:d.all||d.songs.map(function(x){return x.id}),byGenre:d.byGenre||{},updated:d.updated,live:true};
+  CHARTS={all:d.all||d.songs.map(function(x){return x.id}),byGenre:d.byGenre||{},decades:d.decades||[],eraCutoff:d.eraCutoff||2000,updated:d.updated,live:true};
 }).catch(function(){
   CHARTS={all:SAMPLE.map(function(x){return x.id}),byGenre:{},updated:null,live:false};
   GORDER.forEach(function(g){CHARTS.byGenre[g]=SAMPLE.filter(function(x){return x.g===g}).map(function(x){return x.id})});
@@ -786,3 +812,4 @@ Store.resume().then(function(u){
   return Store.load(u).then(function(d){return DATA_READY.then(function(){applyLoad(d)})});
 }).catch(function(){S.user=null}).then(function(){S.booting=false;render()});
 })();
+ 
