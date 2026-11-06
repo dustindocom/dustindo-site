@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+defaults:
+  run:
+    working-directory: va
 jobs:
   charts:
     runs-on: ubuntu-latest
