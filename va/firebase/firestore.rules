@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.uid));
+    }
+    function userDoc(name) {
+      return get(/databases/$(db)/documents/usernames/$(name)).data;
+    }
+    function canEditAs(name) {
+      let u = userDoc(name);
+      return isAdmin() || (signedIn() && (u.protected == false || u.ownerUid == request.auth.uid));
+    }
+    function songLimit(name) {
+      return userDoc(name).get('premium', false) == true ? 20 : 12;
+    }
+
+    match /usernames/{name} {
+      allow read: if true;
+      allow create: if signedIn()
+        && name.matches('^[a-z0-9]([a-z0-9]|[_.-][a-z0-9]){1,18}[a-z0-9]?$')
+        && request.resource.data.name.lower() == name
+        && !(name in ['djdustin','dj-dustin','dj_dustin','dj.dustin',
+                      'guestdj','guest-dj','guest_dj','guest.dj',
+                      'admin','moderator','support','null','undefined'])
+        && request.resource.data.get('premium', false) == false
+        && (request.resource.data.protected == false
+            || request.resource.data.ownerUid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /profiles/{name} {
+      allow read: if true;
+      allow create, update: if exists(/databases/$(db)/documents/usernames/$(name))
+        && canEditAs(name);
+      allow delete: if isAdmin();
+    }
+
+    match /playlists/{id} {
+      allow read: if true;
+      allow create: if canEditAs(request.resource.data.ownerName)
+        && request.resource.data.songs.size() <= songLimit(request.resource.data.ownerName);
+      allow update: if canEditAs(resource.data.ownerName)
+        && request.resource.data.ownerName == resource.data.ownerName
+        && request.resource.data.songs.size() <= songLimit(resource.data.ownerName);
+      allow delete: if canEditAs(resource.data.ownerName);
+    }
+
+    match /featured/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admins/{uid} { allow read, write: if false; }
+  }
+}
