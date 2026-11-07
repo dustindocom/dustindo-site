@@ -442,7 +442,7 @@ function viewSplash(){return '<div style="display:flex;align-items:center;justif
 function viewSignin(){
   return '<div class="signin">'+LOGO(150,103)+'<h1>Who\'s playing?</h1><p>Pick a DJ name, or leave it blank to join as Guest DJ. You can start building MixTapes right away.</p>'+
    '<form id="sf" style="width:100%" novalidate><label class="l2" for="uname">DJ name <span class="muted" style="font-weight:400">(optional)</span></label>'+
-   '<input id="uname" class="field" autocomplete="off" autocapitalize="off" maxlength="20" placeholder="GuestDJ" value="DJMaya">'+
+   '<input id="uname" class="field" autocomplete="off" autocapitalize="off" maxlength="20" placeholder="GuestDJ">'+
    '<label class="l2" for="upass">Want to lock this name with a password?</label>'+
    '<input id="upass" class="field" type="password" placeholder="Optional" autocomplete="new-password">'+
    '<div class="help" id="uhelp">Without a password, anyone who signs in as this name can edit its playlists.</div><div class="err" id="uerr" role="alert"></div>'+
