@@ -14,7 +14,7 @@ function jsonp(url,ms){
   });
 }
 var GMAP=[
-  [/hip.?hop|rap/i,'hip'],[/r&b|soul/i,'rnb'],[/electronic|dance|house|techno|edm/i,'elec'],
+  [/hip.?hop|rap/i,'hip'],[/r&b|soul/i,'rnb'],[/country|folk|americana|bluegrass/i,'ctry'],[/electronic|dance|house|techno|edm/i,'elec'],
   [/latin|reggaeton|urbano|salsa|bachata/i,'lat'],[/jazz|funk|blues/i,'jazz'],
   [/afro|reggae|dancehall|world/i,'afro'],[/rock|alternative|metal|punk/i,'rock'],[/pop|indie/i,'pop']
 ];

@@ -3,7 +3,7 @@
 /* ---------- helpers ---------- */
 var $=function(s,r){return (r||document).querySelector(s)};
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
-var TONES={rose:['#8E6A66','#6F514E'],sage:['#5F7A67','#475E50'],slate:['#566B80','#3F5164'],ochre:['#7F6A40','#615130'],mauve:['#73607F','#584864'],clay:['#94604A','#744A38'],graphite:['#5B5F66','#43474D'],teal:['#4F7476','#3A5859']};
+var TONES={rose:['#8E6A66','#6F514E'],sage:['#5F7A67','#475E50'],slate:['#566B80','#3F5164'],ochre:['#7F6A40','#615130'],mauve:['#73607F','#584864'],clay:['#94604A','#744A38'],graphite:['#5B5F66','#43474D'],teal:['#4F7476','#3A5859'],sand:['#86745E','#675948']};
 var art=function(k){return 'background:linear-gradient(145deg,'+TONES[k][0]+','+TONES[k][1]+')'};
 var AVK=function(k,kind){
   var c1=TONES[k][0],c2=TONES[k][1];
@@ -61,9 +61,9 @@ var PREV='<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" ar
 var DOTS='<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
  
 /* ---------- data (all names are made up) ---------- */
-var G={pop:'Pop / Indie',rock:'Rock / Alt',rnb:'R&B / Soul',elec:'Electronic',jazz:'Jazz / Funk',hip:'Hip-Hop',lat:'Latin',afro:'Afrobeats'};
-var GORDER=['hip','rnb','elec','pop','rock','lat','jazz','afro'];
-var TONE_G={pop:'rose',rock:'graphite',rnb:'clay',elec:'teal',jazz:'slate',hip:'ochre',lat:'mauve',afro:'sage'};
+var G={pop:'Pop / Indie',rock:'Rock / Alt',rnb:'R&B / Soul',elec:'Electronic',jazz:'Jazz / Funk / Blues',hip:'Hip-Hop',lat:'Latin',afro:'Afrobeats / Reggae',ctry:'Country / Folk'};
+var GORDER=['hip','rnb','elec','pop','rock','ctry','lat','jazz','afro'];
+var TONE_G={pop:'rose',rock:'graphite',rnb:'clay',elec:'teal',jazz:'slate',hip:'ochre',lat:'mauve',afro:'sage',ctry:'sand'};
 var RAW=[
 ['pop','Marigold Static','Tin Cathedral'],['pop','Glass Hours','Oona Vale'],['rock','Low Tide Radio','The Quiet Parade'],
 ['rnb','Copper Sky','Hollow Fern'],['elec','Satellite Lullaby','Juno Marsh'],['jazz','Paper Moons','Delphine Arc'],
@@ -95,7 +95,7 @@ var S={
   pinned:[],
   hot:[],booting:true,sg:{items:[],active:-1,open:false},
   playing:null,isPlaying:false,prog:0,
-  vt:'system',chartG:'all',chartE:'all',chartD:'any',chartN:50,crateQ:'',meTab:'tapes',xCount:2341,xState:'idle',xMuted:true,
+  vt:'system',chartL:'hot',chartG:'all',chartE:'all',chartD:'any',chartS:'any',chartM:'any',chartN:50,crateQ:'',meTab:'tapes',xCount:2341,xState:'idle',xMuted:true,
   avatar:0,banner:0,newName:false
 };
 var CTX={};
@@ -251,39 +251,80 @@ var DECS=['50s','60s','70s','80s','90s','00s','10s','20s'];
 var DECL={'50s':'50s & earlier','60s':'60s','70s':'70s','80s':'80s','90s':'90s','00s':'2000s','10s':'2010s','20s':'2020s'};
 var ERAL={all:'All',classics:'Classics',modern:'Modern'};
 function decEra(d){return DECS.indexOf(d)<DECS.indexOf('00s')?'classics':'modern'}
-function chartPool(e,d,g){
+/* Lists: Hot now is Apple's chart. The others rank the whole library by one signal from scripts/build-charts.mjs. */
+var fmtN=function(n){return n>=1e6?(Math.round(n/1e5)/10)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n)};
+var LISTS={
+  hot:{label:'Hot now'},
+  alltime:{label:'All-time',has:function(x){return x.ls>0},by:function(x){return x.ls},
+    note:function(x){return fmtN(x.ls)+' listeners'},desc:'The songs the most people have ever played, counted by Last.fm'},
+  ever:{label:'Evergreens',has:function(x){return x.ev>0},by:function(x){return x.ev},
+    note:function(x){return CHARTS.hot[x.id]?'Still on the chart':x.cd?x.cd+' days on the chart':x.vn+' releases'},
+    desc:'Songs five years old or more that people keep coming back to: still on the chart, back again and again, or reissued many times'},
+  repeat:{label:'On repeat',has:function(x){return x.ls>=50000&&x.rp>0},by:function(x){return x.rp},
+    note:function(x){return x.rp+' plays per listener'},desc:'The songs people put on again and again, by plays per listener'},
+  sing:{label:'Singalongs',has:function(x){return x.kv>=3},by:function(x){return x.kv},
+    note:function(x){return x.kv+' karaoke and tribute versions'},desc:'The songs most made into karaoke and tribute versions'}
+};
+var LORDER=['hot','alltime','ever','repeat','sing'];
+var hasStyle=function(x,k){return !!(x.st&&x.st.indexOf(k)>=0)};
+var hasMood=function(x,k){return !!(x.md&&x.md.indexOf(k)>=0)};
+function chartPool(e,d,g,st,m,l){
+  var L=LISTS[l||'hot'];
   return SONGS.filter(function(x){
     if(e!=='all'&&x.era!==e)return false;
     if(d!=='any'&&x.dec!==d)return false;
     if(g!=='all'&&x.g!==g)return false;
+    if(st&&st!=='any'&&!hasStyle(x,st))return false;
+    if(m&&m!=='any'&&!hasMood(x,m))return false;
+    if(L.has&&!L.has(x))return false;
     return true;
   });
 }
+/* One chip per value present in a pool, most songs first. */
+function tagChips(pool,field,labels,cur,act,allLabel,aria,max){
+  var n={};pool.forEach(function(x){(x[field]||[]).forEach(function(k){if(labels[k])n[k]=(n[k]||0)+1})});
+  var ks=Object.keys(n).sort(function(a,b){return n[b]-n[a]}).slice(0,max||14);
+  if(cur!=='any'&&ks.indexOf(cur)<0&&labels[cur])ks.unshift(cur);
+  if(!ks.length)return '';
+  var lab=function(k){var v=labels[k];return typeof v==='string'?v:v[0]};
+  return '<div class="chips hs" role="group" aria-label="'+aria+'"><button class="cb" data-a="'+act+':any" aria-pressed="'+(cur==='any')+'">'+esc(allLabel)+'</button>'+
+    ks.map(function(k){return '<button class="cb" data-a="'+act+':'+k+'" aria-pressed="'+(cur===k)+'">'+esc(lab(k))+'</button>'}).join('')+'</div>';
+}
 function viewCharts(){
-  var e=S.chartE,d=S.chartD,g=S.chartG,n=S.chartN;
-  var hotOnly=e==='all'&&d==='any';
-  var pool=hotOnly?(g==='all'?CHARTS.all:(CHARTS.byGenre[g]||[])).map(SB).filter(Boolean):chartPool(e,d,g);
+  var l=S.chartL,e=S.chartE,d=S.chartD,g=S.chartG,st=S.chartS,m=S.chartM,n=S.chartN,L=LISTS[l];
+  var V=CHARTS.vocab||{styles:{},moods:{}};
+  var hotOnly=l==='hot'&&e==='all'&&d==='any'&&st==='any'&&m==='any';
+  var pool=hotOnly?(g==='all'?CHARTS.all:(CHARTS.byGenre[g]||[])).map(SB).filter(Boolean):chartPool(e,d,g,st,m,l);
+  if(L.by) pool=pool.slice().sort(function(a,b){return L.by(b)-L.by(a)});
   var list=pool.slice(0,n),ids=list.map(function(s){return s.id});
+  var lists=LORDER.filter(function(k){return k==='hot'||k===l||SONGS.some(LISTS[k].has)});
+  var segL=lists.length>1?'<div class="chips hs" role="group" aria-label="List">'+lists.map(function(k){return '<button class="cb" data-a="cl:'+k+'" aria-pressed="'+(l===k)+'">'+LISTS[k].label+'</button>'}).join('')+'</div>':'';
   var segE='<div style="padding:4px 20px 10px"><div class="seg" role="group" aria-label="Era">'+['all','classics','modern'].map(function(k){return '<button data-a="ce:'+k+'" aria-pressed="'+(e===k)+'">'+ERAL[k]+'</button>'}).join('')+'</div></div>';
   var decs=(CHARTS.decades||[]).filter(function(k){return e==='all'||decEra(k)===e});
   var chipsD=decs.length?'<div class="chips hs" role="group" aria-label="Decade"><button class="cb" data-a="cd:any" aria-pressed="'+(d==='any')+'">Any decade</button>'+decs.map(function(k){return '<button class="cb" data-a="cd:'+k+'" aria-pressed="'+(d===k)+'">'+DECL[k]+'</button>'}).join('')+'</div>':'';
-  var base=hotOnly?null:chartPool(e,d,'all');
+  var base=hotOnly?null:chartPool(e,d,'all',st,m,l);
   var gs=GORDER.filter(function(k){return !base||k===g||base.some(function(x){return x.g===k})});
   var chipsG='<div class="chips hs" role="group" aria-label="Genre"><button class="cb" data-a="cg:all" aria-pressed="'+(g==='all')+'">All genres</button>'+gs.map(function(k){return '<button class="cb" data-a="cg:'+k+'" aria-pressed="'+(g===k)+'">'+G[k]+'</button>'}).join('')+'</div>';
+  // Styles sit under a genre, so they show once a genre is picked. Moods cut across genres and always show.
+  var chipsS=g==='all'?'':tagChips(chartPool(e,d,g,'any',m,l),'st',V.styles,st,'cs','All '+G[g],'Style');
+  var chipsM=tagChips(chartPool(e,d,g,st,'any',l),'md',V.moods,m,'cm','Any mood','Mood',8);
   var what=(d!=='any'?DECL[d]:(e==='all'?'':ERAL[e]))+(g!=='all'?(d!=='any'||e!=='all'?' ':'')+G[g]:'');
-  var sub=hotOnly?'What\'s hot right now'+(g==='all'?', across every genre':' in '+G[g]):'The most played '+(what||'songs')+(e==='classics'&&d==='any'?', before '+(CHARTS.eraCutoff||2000):e==='modern'&&d==='any'?', '+(CHARTS.eraCutoff||2000)+' and later':'');
-  var src=CHARTS.live?'. Apple Music, updated '+new Date(CHARTS.updated).toLocaleDateString()+'.':'. Sample data: the live chart did not load.';
+  var tag=[st!=='any'&&V.styles[st]?V.styles[st][0]:'',m!=='any'&&V.moods[m]?V.moods[m]:''].filter(Boolean).join(', ');
+  var sub=L.desc?L.desc+([what,tag].filter(Boolean).length?' · '+[what,tag].filter(Boolean).join(' · '):''):
+    hotOnly?'What\'s hot right now'+(g==='all'?', across every genre':' in '+G[g]):
+    'The most played '+(what||'songs')+(tag?' · '+tag:'')+(e==='classics'&&d==='any'?', before '+(CHARTS.eraCutoff||2000):e==='modern'&&d==='any'?', '+(CHARTS.eraCutoff||2000)+' and later':'');
+  var src=CHARTS.live?'. '+(l==='alltime'||l==='repeat'||m!=='any'||st!=='any'?'Last.fm and Apple Music':'Apple Music')+', updated '+new Date(CHARTS.updated).toLocaleDateString()+'.':'. Sample data: the live chart did not load.';
   var more=pool.length>n?'<div style="padding:14px 20px 24px;text-align:center"><button class="pill" data-a="cmore">Show more <span class="muted">('+(pool.length-n)+')</span></button></div>':'';
-  var empty=!list.length?'<div class="empty"><b>No songs here yet</b>The library grows every few hours. Try another decade or genre.</div>':'';
-  return '<div class="pagehead"><h1>Charts</h1><p>'+sub+src+'</p></div>'+segE+chipsD+chipsG+
-   list.map(function(s,i){return row(s,{rank:i+1,key:'ch',list:ids})}).join('')+empty+more;
+  var empty=!list.length?'<div class="empty"><b>No songs here yet</b>'+(L.desc?'This list fills in as the library is tagged every few hours. Try fewer filters.':'The library grows every few hours. Try another decade or genre.')+'</div>':'';
+  return '<div class="pagehead"><h1>Charts</h1><p>'+esc(sub)+src+'</p></div>'+segL+segE+chipsD+chipsG+chipsS+chipsM+
+   list.map(function(s,i){return row(s,{rank:i+1,key:'ch',list:ids,sub:L.note?esc(s.a)+' · '+esc(L.note(s)):null})}).join('')+empty+more;
 }
- 
+
 function appleLink(s,cls,inner,style){
   if(s.url) return '<a class="'+cls+'" href="'+esc(s.url)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;'+(style||'')+'">'+inner+'</a>';
   return '<button class="'+cls+'" data-a="apple" style="'+(style||'')+'">'+inner+'</button>';
 }
-var GTERM={hip:'hip hop',rnb:'r&b soul',elec:'house electronic',pop:'indie pop',rock:'alternative rock',lat:'reggaeton latin',jazz:'jazz funk',afro:'afrobeats'};
+var GTERM={hip:'hip hop',rnb:'r&b soul',elec:'house electronic',pop:'indie pop',rock:'alternative rock',lat:'reggaeton latin',jazz:'jazz funk',afro:'afrobeats',ctry:'country'};
 function viewCrate(){
   var chips=GORDER.map(function(k){return '<button class="cb" data-a="cq:'+GTERM[k]+'">'+G[k]+'</button>'}).join('');
   return '<div class="pagehead"><h1>Crate</h1><p>Dig for songs to put in your MixTapes.</p></div>'+
@@ -669,7 +710,10 @@ function act(a,p,el,e){
       if(p[0]==='sugg')PREFS.sugg=p[1];
       if(p[0]==='recent'){PREFS.recent=p[1]==='1';if(!PREFS.recent){RECENT=[];try{localStorage.removeItem('va.recent')}catch(x){}}}
       savePrefs();break;
-    case 'cg': S.chartG=p[0];S.chartN=50;break;
+    case 'cl': S.chartL=p[0];S.chartN=50;break;
+    case 'cs': S.chartS=p[0];S.chartN=50;break;
+    case 'cm': S.chartM=p[0];S.chartN=50;break;
+    case 'cg': S.chartG=p[0];S.chartS='any';S.chartN=50;break;
     case 'ce': S.chartE=p[0];S.chartN=50;if(S.chartD!=='any'&&p[0]!=='all'&&decEra(S.chartD)!==p[0])S.chartD='any';break;
     case 'cd': S.chartD=p[0];S.chartN=50;if(p[0]!=='any'&&S.chartE!=='all'&&decEra(p[0])!==S.chartE)S.chartE=decEra(p[0]);break;
     case 'cmore': S.chartN+=50;break;
@@ -800,9 +844,11 @@ var DATA_READY=VAApi.loadCharts().then(function(d){
   if(!d||!d.songs||!d.songs.length) throw new Error('empty');
   d.songs.forEach(function(x){x.tone=TONE_G[x.g]||'graphite';CAT[x.id]=x});
   SONGS=d.songs.slice();
-  CHARTS={all:d.all||d.songs.map(function(x){return x.id}),byGenre:d.byGenre||{},decades:d.decades||[],eraCutoff:d.eraCutoff||2000,updated:d.updated,live:true};
+  CHARTS={all:d.all||d.songs.map(function(x){return x.id}),byGenre:d.byGenre||{},decades:d.decades||[],eraCutoff:d.eraCutoff||2000,vocab:d.vocab||null,hot:{},updated:d.updated,live:true};
+  CHARTS.all.forEach(function(id){CHARTS.hot[id]=1});
+  if(d.vocab&&d.vocab.genres)Object.keys(d.vocab.genres).forEach(function(k){if(G[k])G[k]=d.vocab.genres[k]});
 }).catch(function(){
-  CHARTS={all:SAMPLE.map(function(x){return x.id}),byGenre:{},updated:null,live:false};
+  CHARTS={all:SAMPLE.map(function(x){return x.id}),byGenre:{},hot:{},updated:null,live:false};
   GORDER.forEach(function(g){CHARTS.byGenre[g]=SAMPLE.filter(function(x){return x.g===g}).map(function(x){return x.id})});
 }).then(seedTapes);
 render();

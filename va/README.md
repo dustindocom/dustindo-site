@@ -7,12 +7,14 @@ Static site for GitHub Pages. No build step.
 2. Settings → Pages → Deploy from branch → `main` / root.
 3. Settings → Actions → General → Workflow permissions → **Read and write**.
 4. Actions → "Refresh charts" → **Run workflow**. It writes `data/charts.json` and repeats every 6 hours.
-5. Optional, for per-genre charts: add a free Last.fm key as a repo secret named `LASTFM_KEY`.
+5. Add a free Last.fm key as a repo secret named `LASTFM_KEY`. It powers styles, moods and the All-time and On repeat lists.
 6. Follow `FIREBASE-SETUP.md` to connect the database. Until you do, the app runs in **local demo mode**:
    everything works, and your MixTapes, likes and pins are saved in this browser only.
 
 ## How it works
-- **Charts**: the Action reads Apple's most-played feed, looks every song up on iTunes (id, artwork, 30-second preview, store link) and drops explicit ones. The app reads only `data/charts.json`.
+- **Charts**: `data/charts.json` is a growing library. Every run keeps all earlier songs, refreshes the hot chart from Apple's most-played feed, and searches the next batch of artists from a list covering the 50s to today in every genre, so older music sits alongside what charts now. With `LASTFM_KEY` set it also pulls Last.fm genre and decade tags. Every song is looked up on iTunes (id, artwork, 30-second preview, store link, release year). Explicit songs are kept and marked with an "E", but when a clean version exists only that one is kept. `data/crawl.json` records which searches were already made, so no request is repeated until it is due again (90 days for an artist). The app reads only `data/charts.json`.
+- **Tags**: two levels, defined in `scripts/vocab.mjs`. Each song has one of 9 genres, up to 3 styles under it (Hair metal, Boom bap, Bossa nova…) and up to 3 moods (Chill, Party, Love songs, Holiday…). Listener tags from Last.fm are kept only when they map onto that list, and a song's decade always comes from its release year, never from a tag.
+- **Lists** on the Charts page: **Hot now** (Apple's chart), **All-time** (most Last.fm listeners), **Evergreens** (5+ years old and still on the chart, coming back to it, or reissued often), **On repeat** (plays per listener) and **Singalongs** (karaoke and tribute versions). Every list works with the era, decade, genre, style and mood filters.
 - **Artwork**: every song shows its Apple artwork. MixTape covers are a 2×2 collage of their first four songs; the full player uses the 600px image.
 - **Search (Crate)**: live Apple Music search, clean versions only, with autofill (see below).
 - **Playback**: one audio element plays Apple's previews. If a stored link has expired, the app looks the song up again and retries. Each song links to Apple Music.
