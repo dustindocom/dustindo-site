@@ -7,3 +7,4 @@
     messagingSenderId: "795355046937",
     appId: "1:795355046937:web:2e7c08d600e82c8901b688"
   };
+  window.VA_FIREBASE = firebaseConfig;
