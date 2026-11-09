@@ -1150,6 +1150,13 @@ document.addEventListener('pointerdown',function(e){
 document.addEventListener('contextmenu',function(e){var el=e.target.closest('[data-lp]');if(el){e.preventDefault()}});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&(S.sheet||S.pop)){closeSheet();render({keep:1})}});
  
+/* Enter in a text field outside a <form> presses the action button beside it (e.g. MixTape name -> Create). Search (#q) has its own handler. */
+document.addEventListener('keydown',function(e){
+  var t=e.target;
+  if(e.key!=='Enter'||e.isComposing||e.shiftKey||!t||t.tagName!=='INPUT'||t.form||t.id==='q') return;
+  var btn=t.parentNode&&t.parentNode.querySelector('button[data-a]');
+  if(btn&&!btn.disabled){e.preventDefault();btn.click()}
+});
 document.addEventListener('focusin',function(e){if(e.target.id==='q')suggestSoon(false)});
 document.addEventListener('focusout',function(e){if(e.target.id==='q')setTimeout(function(){if(document.activeElement!==$('#q'))suggClose()},140)});
 document.addEventListener('mousedown',function(e){if(e.target.closest&&e.target.closest('#sugg'))e.preventDefault()});

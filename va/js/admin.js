@@ -18,6 +18,7 @@ $('#go').onclick=function(){run(function(){
     });
   });
 })};
+$('#pw').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.isComposing&&!$('#go').disabled){e.preventDefault();$('#go').click()}});
 
 $('#check').onclick=function(){run(function(){
   var F=X.F,db=X.db;
