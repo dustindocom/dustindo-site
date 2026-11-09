@@ -95,7 +95,7 @@ var S={
   pinned:[],
   hot:[],booting:true,sg:{items:[],active:-1,open:false},
   playing:null,isPlaying:false,prog:0,
-  vt:'system',chartL:'hot',chartG:'all',chartE:'all',chartD:'any',chartS:'any',chartM:'any',chartN:50,crateQ:'',meTab:'tapes',xCount:2341,xState:'idle',xMuted:true,
+  vt:'system',chartL:'hot',chartG:'all',chartE:'all',chartD:'any',chartS:'any',chartM:'any',chartN:50,crateQ:'',meTab:'tapes',xCount:2341,xMuted:false,
   avatar:0,banner:0,newName:false
 };
 var CTX={};
@@ -469,14 +469,123 @@ function viewSettings(){
    '<p class="help" style="padding:16px 28px">Songs, charts and 30-second previews come from Apple Music. MixTapes, likes and your name are kept on this device until the database is connected.</p>';
 }
  
+/* ---------- StudioX: a locked door. Entering from the tab bar plays a power-down transition (xEnter),
+   then the room lights up in stages. The keycard reader always denies. ---------- */
+var X={go:false,reader:'',denied:false,notYet:false,sw:false,timers:[],navUntil:0};
+var SX_MUTE_ON='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+var SX_MUTE_OFF='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function xLcd(){return X.reader==='sx-r-read'?'READING':X.reader==='sx-r-deny'?'DENIED':'LOCKED'}
+function xSoundOn(){return !!XA.beat&&!S.xMuted}
 function viewX(){
-  var st=S.xState;
-  var label=st==='deny'?'ACCESS DENIED':'SWIPE TO ENTER';
-  return '<div class="xscene"><div class="door"></div><div class="reader"><div class="led'+(st==='deny'?' deny':'')+'"></div><div class="slot"></div><div style="font-size:9px;letter-spacing:.14em;color:#59626D;margin-top:auto">STATION</div></div>'+
-   '<div class="shadow"></div><div class="gap"></div>'+
-   '<div class="xtxt'+(st==='deny'?' shake':'')+'"><div class="st" style="color:'+(st==='deny'?'#FF7A70':'#E9ECEF')+'">'+label+'</div><div class="ct">'+S.xCount.toLocaleString('en-US')+' denied today</div></div>'+
-   '<button class="xbtn" data-a="swipe">Swipe card</button>'+
-   (S.xMuted?'':'<div style="position:absolute;left:0;right:0;bottom:150px;text-align:center;font-size:11px;color:#59626D">Muffled music from the other side</div>')+'</div>';
+  var go=X.go; X.go=false;
+  var sw=function(l){return l.map(function(c){return '<div class="sxw'+(c<0?' rev':'')+' sxc'+Math.abs(c)+'"></div>'}).join('')};
+  var smoke=[['g',60,122],['v',120,126],['g',180,122],['b',90,118],['g',160,118],['p',70,128],['g',200,126],['v',135,130],['g',100,120],['b',175,120],['p',145,128],['g',115,128]]
+    .map(function(m,i){return '<div class="sxm sxm-'+m[0]+' sxm'+(i+1)+'" style="left:'+m[1]+'px;top:'+m[2]+'px"></div>'}).join('');
+  var panel='position:absolute;left:18px;width:164px;border:1px solid #1E242B;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),inset 0 -1px 0 rgba(0,0,0,.5)';
+  var on=xSoundOn();
+  return '<div class="xscene in'+(go?' go':'')+'"><div class="sx-x"><div class="sx-shake"><div class="sx-room sx-bg"></div><div class="sx-stage">'+
+    '<div class="sx-room">'+
+      '<div class="sx-floor"></div>'+
+      '<div style="position:absolute;left:86px;top:190px;width:218px;height:400px;border:5px solid #171A1F;border-bottom:0;box-shadow:0 0 0 1px #0A0B0D,inset 0 0 0 1px #22272E"></div>'+
+      '<div style="position:absolute;left:95px;top:200px;width:200px;height:387px;background:linear-gradient(90deg,#12161B,#191E24 55%,#11151A)">'+
+        '<div style="'+panel+';top:20px;height:150px"></div><div style="'+panel+';top:190px;height:175px"></div>'+
+        '<div class="sx-mono" style="position:absolute;left:52px;top:70px;width:96px;height:22px;border:1px solid #262C33;background:#0F1216;display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:.3em;color:#6B737D">STUDIOX</div>'+
+        '<div style="position:absolute;left:170px;top:196px;width:10px;height:40px;border-radius:5px;background:linear-gradient(#3A414A,#20252B)"></div>'+
+        '<div style="position:absolute;left:148px;top:210px;width:30px;height:7px;border-radius:4px;background:linear-gradient(#4A525C,#2A3038);box-shadow:0 2px 3px rgba(0,0,0,.6)"></div>'+
+      '</div>'+
+      '<div class="sx-hue sx-edge" style="left:94px"></div><div class="sx-hue sx-edge" style="left:295px"></div>'+
+      '<div class="sx-signbox"><div class="sx-sign sx-mono">IN SESSION</div><div class="sx-sign sx-signlit sx-mono">IN SESSION</div></div>'+
+      '<div style="position:absolute;left:308px;top:327px;width:64px;height:136px;border-radius:12px;background:rgba(0,0,0,.45);filter:blur(4px)"></div>'+
+      '<button class="sx-reader '+X.reader+'" data-a="swipe" aria-label="Swipe keycard">'+
+        '<span style="position:absolute;left:4px;top:4px;width:10px;height:118px;border-radius:5px;background:linear-gradient(rgba(255,255,255,.07),transparent)"></span>'+
+        '<span class="sx-screw" style="top:5px"></span><span class="sx-screw" style="bottom:5px"></span>'+
+        '<span style="position:absolute;left:5px;top:15px;width:34px;height:18px;border-radius:2px;background:#050607;box-shadow:inset 0 1px 3px rgba(0,0,0,.9),0 0 0 1px #2A2F35;display:flex;align-items:center;justify-content:center"><span class="sx-lcd sx-mono">'+xLcd()+'</span></span>'+
+        '<span class="sx-leda"></span><span class="sx-ledr"></span>'+
+        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B636D" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="position:absolute;left:11px;top:58px"><path d="M8 7a7 7 0 0 1 0 10M11.5 4.5a11 11 0 0 1 0 15M5 9.5a3.5 3.5 0 0 1 0 5"/></svg>'+
+        '<span class="sx-mono" style="position:absolute;left:6px;top:100px;font-size:6px;letter-spacing:.1em;color:#4B535D">VA·SEC</span>'+
+        '<span style="position:absolute;left:42px;top:22px;width:7px;height:84px;border-radius:3px;background:linear-gradient(90deg,#050607,#14171B);box-shadow:inset 1px 0 2px rgba(0,0,0,.9),inset -1px 0 0 rgba(255,255,255,.06)"></span>'+
+      '</button>'+
+    '</div>'+
+    '<div class="sx-spill"><div class="sx-lights" style="position:absolute;inset:0;overflow:hidden;opacity:.65"><div style="position:absolute;inset:0;background:radial-gradient(ellipse 45% 70% at 50% 0%,rgba(230,228,255,.35),transparent 75%)"></div>'+sw([1,-5,3,-6,4,-7])+'</div></div>'+
+    '<div class="sx-fan"><div class="sx-hue" style="position:absolute;inset:0;background:radial-gradient(ellipse 50% 100% at 50% 100%,rgba(139,124,246,.22),transparent 72%)"></div></div>'+
+    '<div class="sx-slit"><div class="sx-lights" style="position:absolute;inset:0"><div class="sx-pulse" style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,.6),rgba(255,255,255,.15))"></div>'+sw([1,-2,3,-4,5,-6,7])+'</div>'+
+      '<div class="sx-walk" style="width:34px"></div><div class="sx-walk two" style="width:22px"></div>'+
+      '<div class="sx-feet"><span></span><span></span></div></div>'+
+    '<div aria-hidden="true" style="position:absolute;left:0;top:430px;width:390px;height:336px;pointer-events:none">'+smoke+'</div>'+
+    '<div class="sx-haze"></div>'+
+    '<div class="sx-card" aria-hidden="true"><div style="position:absolute;left:0;top:0;width:5px;height:46px;background:#1A1D21"></div><div style="position:absolute;left:7px;top:5px;width:20px;height:12px;border-radius:2px;background:linear-gradient(110deg,#FF5A5F,#FFD84D,#4ADE80,#38BDF8,#8B7CF6,#F472B6);opacity:.9"></div><div style="position:absolute;left:8px;top:24px;font-family:var(--f-head);font-size:8px;font-weight:700;color:#1A1D21">VA</div><div style="position:absolute;left:8px;top:35px;width:16px;height:2px;background:#9AA1AA"></div></div>'+
+    '<div style="position:absolute;left:0;right:0;top:408px;text-align:center;pointer-events:none"><span class="sx-whisper sx-mono" aria-hidden="true">YOU WEREN\'T SUPPOSED TO FIND THIS</span></div>'+
+    '<div class="sx-ui sx-status" role="status">'+
+      (X.denied?'<div class="sx-mono sx-deny">ACCESS DENIED</div>':'<div class="sx-mono sx-idle">SWIPE YOUR CARD ↗</div>')+
+      '<div class="sx-count">'+S.xCount.toLocaleString('en-US')+' denied today</div>'+
+      (X.notYet?'<div class="sx-mono sx-notyet">…NOT YET.</div>':'')+
+    '</div>'+
+   '</div></div>'+
+   '<div class="sx-ui sx-head"><div class="sx-mono" style="font-size:11px;letter-spacing:.2em;color:#9BA3AD">STUDIOX · LEVEL −2</div><h1>Restricted area</h1><p>Something big is being made in here.</p></div>'+
+   '<button class="sx-ui sx-mute" data-a="xmute" aria-label="'+(on?'Mute':'Unmute')+'">'+(on?SX_MUTE_ON:SX_MUTE_OFF)+'</button>'+
+  '</div></div>';
+}
+/* scale the 390×766 door stage down to fit short screens; it sits on top of the tab bar,
+   and everything from the IN SESSION sign (y≈150) down must clear the heading */
+function xFit(){
+  var sc=document.querySelector('.xscene'); if(!sc) return;
+  var hd=sc.querySelector('.sx-head'), hb=hd?hd.offsetTop+hd.offsetHeight+10:140;
+  var nh=$('#nav').offsetHeight||78, s=Math.min(1,(sc.clientHeight-nh-hb)/616,sc.clientWidth/390);
+  sc.style.setProperty('--sxnav',nh+'px'); sc.style.setProperty('--sxs',Math.max(.5,s).toFixed(3));
+}
+window.addEventListener('resize',xFit);
+function xReduced(){return window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches}
+function xClear(){X.timers.forEach(clearTimeout);X.timers=[];X.sw=false}
+function xLater(fn,ms){X.timers.push(setTimeout(fn,ms))}
+/* called from the tab bar before the X view renders: freeze the current screen and power it down */
+function xEnter(){
+  xClear(); X.go=true; X.reader=''; X.denied=false; X.notYet=false;
+  X.navUntil=Date.now()+4900;
+  xMusic(1.9);
+  if(xReduced()) return;
+  var ph=$('#phone'), out=document.createElement('div'), home=document.createElement('div');
+  out.className='sx-out'; out.setAttribute('aria-hidden','true'); out.inert=true; home.className='sx-home';
+  ['#screen','#mini','#nav'].forEach(function(s){
+    var o=$(s); if(!o||o.style.display==='none') return;
+    /* ids are kept so the frozen copy styles exactly like the original; it comes later in the DOM, so $('#…') still finds the live one */
+    var c=o.cloneNode(true); home.appendChild(c); c._st=o.scrollTop;
+  });
+  out.appendChild(home);
+  out.insertAdjacentHTML('beforeend','<div class="sx-tear"></div><div class="sx-vig"></div>');
+  ph.appendChild(out);
+  Array.prototype.forEach.call(home.children,function(c){if(c._st)c.scrollTop=c._st});
+  setTimeout(function(){out.remove()},1000);
+}
+/* leaving: the next screen flickers back on */
+function xLeave(){
+  xClear(); xStop();
+  if(xReduced()) return;
+  setTimeout(function(){
+    ['#screen','#nav','#mini'].forEach(function(s){var o=$(s);o.classList.remove('sx-back');void o.offsetWidth;o.classList.add('sx-back')});
+    setTimeout(function(){['#screen','#nav','#mini'].forEach(function(s){$(s).classList.remove('sx-back')})},850);
+  },0);
+}
+function xUpd(){
+  var r=document.querySelector('.xscene'); if(!r) return;
+  var rd=r.querySelector('.sx-reader'); rd.className='sx-reader '+X.reader;
+  r.querySelector('.sx-lcd').textContent=xLcd();
+  r.querySelector('.sx-status').innerHTML=(X.denied?'<div class="sx-mono sx-deny">ACCESS DENIED</div>':'<div class="sx-mono sx-idle">SWIPE YOUR CARD ↗</div>')+
+    '<div class="sx-count">'+S.xCount.toLocaleString('en-US')+' denied today</div>'+(X.notYet?'<div class="sx-mono sx-notyet">…NOT YET.</div>':'');
+  xMuteBtn();
+}
+function xMuteBtn(){
+  var b=document.querySelector('.sx-mute'); if(!b) return;
+  var on=xSoundOn(); b.setAttribute('aria-label',on?'Mute':'Unmute'); b.innerHTML=on?SX_MUTE_ON:SX_MUTE_OFF;
+}
+function xSwipe(){
+  var r=document.querySelector('.xscene'); if(!r||X.sw) return;
+  xClear(); X.sw=true; X.reader=''; X.denied=false; X.notYet=false;
+  r.classList.remove('sw-on'); void r.offsetWidth; r.classList.add('sw-on'); xUpd();
+  xLater(function(){X.reader='sx-r-read';xUpd()},280);
+  xLater(function(){X.reader='sx-r-deny';X.denied=true;S.xCount++;xUpd();if(xSoundOn())xLevel(.04,.1)},880);
+  xLater(function(){X.notYet=true;xUpd()},2600);
+  xLater(function(){if(xSoundOn())xLevel(.8,1.2)},3000);
+  xLater(function(){X.sw=false;X.reader='';r.classList.remove('sw-on');xUpd()},3500);
 }
  
 function viewSplash(){return '<div style="display:flex;align-items:center;justify-content:center;height:100%">'+LOGO(150,103)+'</div>'}
@@ -559,22 +668,29 @@ function render(opts){
   var top=S.stack[S.stack.length-1];
   var screen=$('#screen'), sig=(S.user?S.tab:'signin')+JSON.stringify(top||{});
   scrolls[lastSig]=screen.scrollTop;
+  var keepFocus=Rows?Rows.save(lastSig,sig):null;
   CTX={};
   var html,nonav=false;
+  var isX=S.user&&!top&&S.tab==='x';
+  /* re-rendering StudioX in place would restart its lights and transition, so keep the live scene */
+  var keepX=isX&&sig===lastSig&&!!screen.querySelector('.xscene');
   if(!S.user){html=S.booting?viewSplash():viewSignin();nonav=true}
+  else if(keepX){html=null}
   else if(top){
     html= top.type==='tape'?viewTape(top.id): top.type==='dj'?viewDj(top.id): top.type==='settings'?viewSettings():'';
   }else{
     html={home:viewHome,charts:viewCharts,x:viewX,crate:viewCrate,me:viewMe}[S.tab]();
   }
-  var isX=S.user&&!top&&S.tab==='x';
-  if(!isX) xStop();
+  if(!isX){xStop();xClear()}
   screen.className=(nonav?'nonav':'');
-  screen.innerHTML=html;
+  if(html!==null) screen.innerHTML=html;
   screen.scrollTop=(sig===lastSig||opts.keep)?(scrolls[sig]||0):(scrolls[sig]||0);
   lastSig=sig;
   $('#nav').style.display=nonav?'none':'flex';
-  $('#nav').innerHTML=nonav?'':[['home','Home'],['charts','Charts'],['x','Station X'],['crate','Crate'],['me','Me']].map(function(t){
+  $('#nav').classList.toggle('xnav',!!isX);
+  $('#nav').classList.toggle('sx-navgo',!!isX&&Date.now()<X.navUntil);
+  if(isX){xFit();xMuteBtn()}
+  $('#nav').innerHTML=nonav?'':[['home','Home'],['charts','Charts'],['x','StudioX'],['crate','Crate'],['me','Me']].map(function(t){
     var cur=S.tab===t[0]&&!(top&&0);
     return '<div class="tabw"><button class="tab" data-a="tab:'+t[0]+'" aria-current="'+(cur?'page':'false')+'"><div class="bar"></div>'+ic(t[0],24,{sw:t[0]==='x'?3.2:1.8})+'<div>'+t[1]+'</div></button></div>';
   }).join('');
@@ -584,9 +700,96 @@ function render(opts){
     '<button class="pbtn" data-a="toggle" aria-label="'+(S.isPlaying?'Pause':'Play')+'">'+(S.isPlaying?PAUSE:PLAY).replace(/width="22" height="22"/,'width="20" height="20"')+'</button><div class="track"><i data-prog style="width:'+(S.prog*100)+'%"></i></div></div>':'';
   var layer=$('#layer');
   layer.innerHTML=playerHtml()||(sheetHtml()+popHtml());
+  if(Rows)Rows.restore(sig,keepFocus);
   var nn=$('#newname'); if(nn&&!opts.noFocus) setTimeout(function(){nn.focus()},60);
   wireSignin();
 }
+
+/* ---------- side-scrolling rows (.hs): keep position + focus across renders, arrow keys, mouse wheel ----------
+   Each row is one Tab stop (roving tabindex). Left/Right move between items, Home/End jump to the ends;
+   the two-row Favorites grid (.fgrid) also takes Up/Down. A vertical mouse wheel over a row scrolls it sideways
+   until it reaches an end, then the page scrolls again. */
+var Rows=(function(){
+  var pos={},cur={};
+  function key(r){return r.id||r.getAttribute('aria-label')||r.className.split(' ')[0]}
+  function items(r){return Array.prototype.filter.call(r.children,function(c){return c.matches('button,[data-a]')})}
+  function inView(r,it){var a=r.getBoundingClientRect(),b=it.getBoundingClientRect();return b.right>a.left+4&&b.left<a.right-4}
+  function setCurrent(r,it){items(r).forEach(function(c){c.tabIndex=c===it?0:-1});cur[key(r)]=it&&it.dataset.a}
+  function init(r){
+    if(!r.getAttribute('role'))r.setAttribute('role','toolbar');
+    if(!r.getAttribute('aria-label')){var h=r.parentNode&&r.parentNode.querySelector('h2');if(h)r.setAttribute('aria-label',h.textContent)}
+    var its=items(r); if(!its.length) return;
+    var want=cur[key(r)],pick=null;
+    its.forEach(function(c){if(!pick&&want&&c.dataset.a===want)pick=c});
+    if(pick&&!inView(r,pick))pick=null;
+    if(!pick)its.forEach(function(c){if(!pick&&c.getAttribute('aria-pressed')==='true'&&inView(r,c))pick=c});
+    if(!pick)its.forEach(function(c){if(!pick&&inView(r,c))pick=c});
+    setCurrent(r,pick||its[0]);
+  }
+  /* before render: remember each row's scroll and which control had focus */
+  function save(oldSig,newSig){
+    $$('.hs').forEach(function(r){pos[oldSig+'|'+key(r)]=r.scrollLeft});
+    var a=document.activeElement; if(!a||a===document.body) return null;
+    var inNav=!!a.closest('#nav'),inScreen=!!a.closest('#screen');
+    if(!inNav&&!(inScreen&&oldSig===newSig)) return null;
+    return {a:a.dataset.a,id:a.id,s:a.selectionStart,e:a.selectionEnd};
+  }
+  function restore(sig,f){
+    $$('.hs').forEach(function(r){var p=pos[sig+'|'+key(r)];if(p)r.scrollLeft=p;init(r)});
+    if(!f) return;
+    var el=f.a?document.querySelector('#screen [data-a="'+f.a+'"],#nav [data-a="'+f.a+'"]'):f.id?document.getElementById(f.id):null;
+    if(!el||el===document.activeElement) return;
+    el.focus({preventScroll:true});
+    if(f.s!=null&&el.setSelectionRange){try{el.setSelectionRange(f.s,f.e)}catch(_){}}
+  }
+  function $$(s){return Array.prototype.slice.call(document.querySelectorAll(s))}
+
+  document.addEventListener('focusin',function(e){
+    var r=e.target.parentNode; if(r&&r.classList&&r.classList.contains('hs'))setCurrent(r,e.target);
+  });
+  /* when a row is scrolled by wheel/trackpad, move its Tab stop to an item that is on screen */
+  document.addEventListener('scroll',function(e){
+    var r=e.target; if(!r.classList||!r.classList.contains('hs')) return;
+    clearTimeout(r._rt); r._rt=setTimeout(function(){
+      var its=items(r),c=its.filter(function(x){return x.tabIndex===0})[0];
+      if(c&&(c===document.activeElement||inView(r,c))) return;
+      var v=its.filter(function(x){return inView(r,x)})[0]; if(v)setCurrent(r,v);
+    },120);
+  },true);
+  document.addEventListener('keydown',function(e){
+    if(e.altKey||e.ctrlKey||e.metaKey) return;
+    var it=e.target,r=it&&it.parentNode;
+    if(!r||!r.classList||!r.classList.contains('hs')||it.matches('input,textarea,select')) return;
+    var its=items(r),i=its.indexOf(it),n=its.length,grid=r.classList.contains('fgrid'),step=grid?2:1,j=-1;
+    if(i<0) return;
+    switch(e.key){
+      case 'ArrowRight': j=i+step; if(j>=n&&grid&&Math.floor((n-1)/2)>Math.floor(i/2))j=n-1; break;
+      case 'ArrowLeft': j=i-step; break;
+      case 'ArrowDown': if(grid&&i%2===0)j=i+1; break;
+      case 'ArrowUp': if(grid&&i%2===1)j=i-1; break;
+      case 'Home': j=0; break;
+      case 'End': j=n-1; break;
+      default: return;
+    }
+    if(j<0||j>=n){ if(e.key==='ArrowLeft'||e.key==='ArrowRight')e.preventDefault(); return }
+    e.preventDefault();
+    setCurrent(r,its[j]); its[j].focus();
+  });
+  /* vertical wheel → sideways. A wheel stream that started over the page keeps scrolling the page,
+     so passing over a row mid-scroll never catches you. Trackpad sideways swipes are left to the browser. */
+  var last={t:0,row:null};
+  document.addEventListener('wheel',function(e){
+    var r=e.target.closest&&e.target.closest('.hs'),now=Date.now(),cont=now-last.t<250;
+    var prev=last.row; last.t=now;
+    if(!r||e.shiftKey||e.ctrlKey||Math.abs(e.deltaX)>=Math.abs(e.deltaY)||r.scrollWidth<=r.clientWidth+1){last.row=null;return}
+    if(cont&&prev!==r){last.row=null;return}
+    var d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?r.clientWidth:1),max=r.scrollWidth-r.clientWidth;
+    if((d>0&&r.scrollLeft>=max-1)||(d<0&&r.scrollLeft<=0)){last.row=null;return}
+    e.preventDefault(); last.row=r;
+    r.scrollLeft+=d;
+  },{passive:false});
+  return {save:save,restore:restore};
+})();
  
 /* ---------- actions ---------- */
 function toast(msg,undo){
@@ -644,7 +847,13 @@ function go(v){S.stack.push(v);closeSheet()}
  
 function act(a,p,el,e){
   switch(a){
-    case 'tab': S.tab=p[0];S.stack=[];closeSheet();if(p[0]!=='x')xStop();break;
+    case 'tab':
+      var wasX=S.tab==='x'&&!S.stack.length, toX=p[0]==='x';
+      if(toX&&!wasX) xEnter(); else if(wasX&&!toX) xLeave();
+      S.tab=p[0];S.stack=[];closeSheet();break;
+    case 'xmute':
+      if(xSoundOn()){S.xMuted=true;xStop()}else{S.xMuted=false;xMusic(0)}
+      xMuteBtn();break;
     case 'back': S.stack.pop();break;
     case 'tape': go({type:'tape',id:p[0]});break;
     case 'dj': go({type:'dj',id:p[0]});break;
@@ -726,7 +935,7 @@ function act(a,p,el,e){
     case 'apple': toast('No Apple Music link for this song.');break;
     case 'undo': if(S._undo){S._undo();S._undo=null;$('#toast').innerHTML=''}break;
     case 'logout': Store.signOut().catch(function(){});S.user=null;S.tapes=[];S.liked={};S.likedTapes=[];S.pinned=[];S.playing=null;S.stack=[];S.tab='home';closeSheet();S.isPlaying=false;AU.pause();xStop();seedPlaying();break;
-    case 'swipe': S.xState='deny';S.xCount++;xStart();setTimeout(function(){if(S.xState==='deny'){S.xState='idle';if(S.tab==='x'&&!S.stack.length)render()}},1800);break;
+    case 'swipe': xSwipe();break;
   }
   render({keep:1});
 }
@@ -738,6 +947,8 @@ function applyTheme(){
 document.addEventListener('click',function(e){
   var el=e.target.closest('[data-a]'); if(!el) return;
   if(el.dataset.lpFired){delete el.dataset.lpFired;e.preventDefault();return}
+  /* Safari doesn't focus buttons on click; focus row items so arrow keys work right after a click */
+  if(el.parentNode&&el.parentNode.classList&&el.parentNode.classList.contains('hs')&&document.activeElement!==el)el.focus({preventScroll:true});
   var parts=el.dataset.a.split(':');
   act(parts[0],parts.slice(1),el,e);
 });
@@ -796,7 +1007,7 @@ function wireSignin(){
   });
 }
  
-/* ---------- playback simulation + Studio X sound ---------- */
+/* ---------- playback simulation + StudioX sound ---------- */
 setInterval(function(){
   if(!S.sim||!S.isPlaying||!S.playing) return;
   S.prog+=.2/30;
@@ -804,35 +1015,60 @@ setInterval(function(){
   progUpdate();
 },200);
  
-var AC=null,xT=null;
-function xStart(){
-  if(document.hidden||!document.hasFocus()) return;
-  S.xMuted=false;
+/* muffled club behind the door: 120 bpm kick + a sawtooth bassline, all through a 150 Hz low-pass */
+var XA={ac:null,lp:null,master:null,beat:null,step:0,off:null};
+function xAudio(){
+  if(XA.ac) return true;
+  var C=window.AudioContext||window.webkitAudioContext; if(!C) return false;
   try{
-    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
-    if(AC.state==='suspended')AC.resume();
-    if(xT)return;
-    var beat=function(){
-      var o=AC.createOscillator(),g=AC.createGain(),f=AC.createBiquadFilter(),t=AC.currentTime;
-      o.type='sine';o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(42,t+.25);
-      f.type='lowpass';f.frequency.value=110;
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.34);
-      o.connect(f);f.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+.4);
-    };
-    beat();xT=setInterval(beat,500);
-  }catch(err){}
+    XA.ac=new C();
+    XA.lp=XA.ac.createBiquadFilter();XA.lp.type='lowpass';XA.lp.frequency.value=150;XA.lp.Q.value=.8;
+    XA.master=XA.ac.createGain();XA.master.gain.value=0;
+    XA.lp.connect(XA.master);XA.master.connect(XA.ac.destination);
+    return true;
+  }catch(e){return false}
+}
+function xLevel(v,sec){
+  if(!XA.master) return;
+  var t=XA.ac.currentTime,g=XA.master.gain;
+  g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(v,t+sec);
+}
+function xKick(t){
+  var o=XA.ac.createOscillator(),g=XA.ac.createGain();
+  o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(40,t+.16);
+  g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(.001,t+.32);
+  o.connect(g);g.connect(XA.lp);o.start(t);o.stop(t+.35);
+}
+function xBass(t,f){
+  var o=XA.ac.createOscillator(),g=XA.ac.createGain();
+  o.type='sawtooth';o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.35,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.28);
+  o.connect(g);g.connect(XA.lp);o.start(t);o.stop(t+.3);
+}
+function xTick(){
+  var t=XA.ac.currentTime+.06,s=(XA.step++)%16;
+  if(s%4===0)xKick(t);
+  if(s===3||s===11)xBass(t,55);
+  if(s===7)xBass(t,65.4);
+  if(s===14)xBass(t,49);
+}
+/* start the loop, fading in after `delay` seconds; only while the page is visible and focused, and not muted */
+function xMusic(delay){
+  if(S.xMuted||document.hidden||!document.hasFocus()||!xAudio()) return;
+  clearTimeout(XA.off);
+  try{XA.ac.resume()}catch(e){}
+  clearInterval(XA.beat);XA.step=0;XA.beat=setInterval(xTick,125);
+  var t=XA.ac.currentTime,g=XA.master.gain;
+  g.cancelScheduledValues(t);g.setValueAtTime(0,t);g.setValueAtTime(0,t+delay);g.linearRampToValueAtTime(.8,t+delay+1.6);
 }
 function xStop(){
-  if(xT){clearInterval(xT);xT=null}
-  S.xMuted=true;
-  try{if(AC&&AC.state==='running')AC.suspend()}catch(e){}
+  if(!XA.beat) return;
+  xLevel(0,.25);clearInterval(XA.beat);XA.beat=null;
+  clearTimeout(XA.off);XA.off=setTimeout(function(){try{if(!XA.beat&&XA.ac.state==='running')XA.ac.suspend()}catch(e){}},400);
 }
-/* Station X sound only plays while the tab is open, visible and focused */
+/* StudioX sound only plays while the tab is open, visible and focused; it comes back with the speaker button */
 function xGuard(force){
-  if(force===true||document.hidden||!document.hasFocus()){
-    var was=!S.xMuted; xStop();
-    if(was&&S.user&&S.tab==='x'&&!S.stack.length) render({keep:1});
-  }
+  if(force===true||document.hidden||!document.hasFocus()){xStop();xMuteBtn()}
 }
 document.addEventListener('visibilitychange',function(){xGuard()});
 window.addEventListener('blur',function(){xGuard(true)});

@@ -19,7 +19,7 @@ Static site for GitHub Pages. No build step.
 - **Search (Crate)**: live Apple Music search, clean versions only, with autofill (see below).
 - **Playback**: one audio element plays Apple's previews. If a stored link has expired, the app looks the song up again and retries. Each song links to Apple Music.
 - **Database**: Firebase Auth (anonymous plus optional password-locked names) and Firestore, per `FIREBASE-SETUP.md`.
-- **Station X**: its sound stops the moment you leave the tab, switch browser tabs, or the window loses focus. It restarts only when you swipe again.
+- **StudioX**: a locked door. Opening the tab plays a power-down transition into the room; the keycard reader always says ACCESS DENIED. Its muffled music stops the moment you leave the tab, switch browser tabs, or the window loses focus, and comes back with the speaker button (which also mutes it).
 
 ## Search autofill
 Settings → Search controls it, saved per device:

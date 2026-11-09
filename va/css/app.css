@@ -219,24 +219,134 @@ label.l2{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
 .signin h1{font-size:30px;font-weight:700;margin-top:26px}
 .signin p{margin:6px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
 
-/* studio x */
-.xscene{position:absolute;inset:0;background:#06070A;color:#E9ECEF;overflow:hidden}
-.xscene .door{position:absolute;left:50%;top:78px;width:230px;height:430px;margin-left:-115px;border:1px solid #1B2026;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#0A0C10,#07080B);box-shadow:inset 0 0 40px rgba(0,0,0,.8)}
-.xscene .door:after{content:"";position:absolute;right:18px;top:210px;width:9px;height:42px;border-radius:5px;background:#12161B}
-.xscene .gap{position:absolute;left:50%;top:508px;width:250px;height:3px;margin-left:-125px;background:#fff;opacity:.92;box-shadow:0 0 22px 6px rgba(255,255,255,.28),0 14px 60px 20px rgba(255,255,255,.12);animation:glow 5s ease-in-out infinite}
-.xscene .shadow{position:absolute;left:50%;top:505px;width:44px;height:9px;margin-left:-125px;background:#06070A;border-radius:4px;animation:pass 11s linear infinite}
-.reader{position:absolute;left:8px;top:232px;width:64px;height:130px;border-radius:12px;background:#10141A;border:1px solid #232A33;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:12px}
-.led{width:12px;height:12px;border-radius:50%;background:#2B323B}
-.led.deny{background:#FF5D55;box-shadow:0 0 14px 3px rgba(255,93,85,.55)}
-.slot{width:48px;height:5px;border-radius:3px;background:#05070A;border:1px solid #232A33}
-.xtxt{position:absolute;left:0;right:0;top:536px;text-align:center}
-.xtxt .st{font-family:var(--f-head);font-weight:700;font-size:22px;letter-spacing:.14em}
-.xtxt .ct{margin-top:8px;font-size:13px;color:#8D96A0;font-variant-numeric:tabular-nums}
-.xbtn{position:absolute;left:50%;bottom:100px;margin-left:-90px;width:180px;height:48px;border-radius:99px;background:#E9ECEF;color:#06070A;border:0;font-weight:700;font-size:15px}
-.shake{animation:shake .35s}
-@keyframes shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
-@keyframes glow{0%,100%{opacity:.8}50%{opacity:1}}
-@keyframes pass{0%{transform:translateX(-60px)}12%{transform:translateX(-60px)}22%{transform:translateX(320px)}100%{transform:translateX(320px)}}
+/* studiox: a locked door behind the tab bar. Design stage is 390×766 (844 minus the tab bar), scaled by --sxs on short screens. */
+.xscene{position:absolute;inset:0;overflow:hidden;background:#000;color:#F2F4F6;font-family:var(--f-body)}
+.xscene button{font:inherit;cursor:pointer}
+.sx-mono{font-family:'Space Mono',ui-monospace,Menlo,monospace}
+.sx-x,.sx-shake{position:absolute;inset:0}
+.sx-x{background:#040506}
+.sx-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 70%,#15181D 0%,#0A0C0F 55%,#040506 100%)}
+.sx-stage{position:absolute;left:50%;bottom:var(--sxnav,78px);width:390px;height:766px;margin-left:-195px;transform:scale(var(--sxs,1));transform-origin:50% 100%}
+.sx-room{position:absolute;inset:0}
+.sx-floor{position:absolute;left:-400px;top:590px;width:1190px;height:254px;background:linear-gradient(#0C0E11,#050607);border-top:1px solid #15181D}
+.sx-edge{position:absolute;top:200px;width:1px;height:387px;background:linear-gradient(transparent,rgba(170,160,255,.35) 70%,rgba(255,255,255,.55));opacity:.6}
+.sx-signbox{position:absolute;left:147px;top:158px;width:96px;height:24px}
+.sx-sign{position:absolute;inset:0;border:1px solid #2A1517;border-radius:3px;background:#170C0D;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.22em;color:#3A2224}
+.sx-sign.sx-signlit{border-color:#6A2226;background:#3A0F12;color:#FF8A8E;text-shadow:0 0 6px rgba(255,90,95,.9);box-shadow:0 0 22px rgba(255,90,95,.35)}
+.sx-reader{position:absolute;left:312px;top:330px;width:56px;height:128px;padding:0;border-radius:9px;border:1px solid #3A414A;background:linear-gradient(160deg,#3B4048 0%,#1E2228 38%,#121519 100%);box-shadow:0 8px 18px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 4px rgba(0,0,0,.6)}
+.sx-screw{position:absolute;left:19px;width:5px;height:5px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#8A919A,#2A2F35)}
+.sx-lcd{font-size:7px;font-weight:700;letter-spacing:.04em;color:#C9474B;text-shadow:0 0 3px rgba(255,90,95,.45)}
+.sx-r-read .sx-lcd{color:#FFB547;text-shadow:0 0 4px rgba(255,181,71,.8)}
+.sx-r-deny .sx-lcd{color:#FF5A5F;text-shadow:0 0 5px rgba(255,90,95,.95)}
+.sx-leda,.sx-ledr{position:absolute;top:40px;width:5px;height:5px;border-radius:50%}
+.sx-leda{left:11px;background:#3A2E14}
+.sx-ledr{left:22px;background:#6A2226}
+.sx-r-read .sx-leda{background:#FFB547;box-shadow:0 0 8px 2px rgba(255,181,71,.7);animation:sxBlink .16s steps(2) infinite}
+.sx-r-deny .sx-ledr{background:#FF5A5F;box-shadow:0 0 9px 2px rgba(255,90,95,.85)}
+.sx-spill{position:absolute;left:25px;top:589px;width:340px;height:160px;filter:blur(12px);-webkit-mask-image:radial-gradient(ellipse 55% 100% at 50% 0%,#000 0%,rgba(0,0,0,.55) 35%,transparent 80%);mask-image:radial-gradient(ellipse 55% 100% at 50% 0%,#000 0%,rgba(0,0,0,.55) 35%,transparent 80%)}
+.sx-fan{position:absolute;left:85px;top:515px;width:220px;height:74px}
+.sx-slit{position:absolute;left:95px;top:586px;width:200px;height:4px;overflow:hidden;background:#241E2E;box-shadow:0 0 12px 2px rgba(170,160,255,.4)}
+.sx-walk{position:absolute;left:0;top:0;height:4px;background:#040506;border-radius:2px}
+.sx-feet{position:absolute;left:80px;top:0;width:40px;height:4px;display:flex;gap:10px}
+.sx-feet span{width:15px;height:4px;background:#040506}
+.sx-haze{position:absolute;left:-400px;top:560px;width:1190px;height:206px;pointer-events:none;background:linear-gradient(rgba(150,160,200,0),rgba(150,160,200,.07) 40%,rgba(150,160,200,.03))}
+.sx-card{position:absolute;left:349px;top:352px;width:30px;height:46px;border-radius:3px;background:linear-gradient(135deg,#F4F6F8,#D3D9E0);box-shadow:0 4px 10px rgba(0,0,0,.6);overflow:hidden;pointer-events:none}
+.sx-whisper{display:inline-block;font-size:12px;letter-spacing:.16em;color:#B9C0C8;text-shadow:-1px 0 rgba(255,90,95,.6),1px 0 rgba(56,189,248,.6)}
+.sx-head{position:absolute;left:24px;right:72px;top:calc(50px + env(safe-area-inset-top,0px))}
+.sx-head h1{margin:8px 0 0;font-size:30px;font-weight:700}
+.sx-head p{margin:6px 0 0;font-size:14px;color:#9BA3AD}
+.sx-mute{position:absolute;right:12px;top:calc(48px + env(safe-area-inset-top,0px));width:44px;height:44px;border-radius:50%;background:rgba(31,36,43,.6);border:1px solid #2A3038;color:#C9CFD6;display:flex;align-items:center;justify-content:center;padding:0}
+.sx-status{position:absolute;left:24px;right:24px;top:688px;text-align:center}
+.sx-deny{font-size:14px;font-weight:700;letter-spacing:.2em;color:#FF7B7F}
+.sx-idle{font-size:13px;letter-spacing:.18em;color:#F2F4F6}
+.sx-count{margin-top:6px;font-size:12px;color:#9BA3AD;font-variant-numeric:tabular-nums}
+.sx-notyet{margin-top:4px;font-size:11px;letter-spacing:.14em;color:#C9B8FF;animation:sxRise 1.2s both}
+/* light sweeps and smoke */
+.sxw{position:absolute;top:0;left:0;height:100%;width:80px;mix-blend-mode:screen;animation:sxSwR 3s linear infinite}
+.sxw.rev{animation-name:sxSwL}
+.sx-spill .sxw{width:150px;animation-name:sxSpR}
+.sx-spill .sxw.rev{animation-name:sxSpL}
+.sxw.sxc1{background:linear-gradient(90deg,transparent,rgba(255,90,95,.95),transparent);animation-duration:2.6s}
+.sxw.sxc2{background:linear-gradient(90deg,transparent,rgba(255,159,67,.9),transparent);animation-duration:3.7s;animation-delay:-1.2s}
+.sxw.sxc3{background:linear-gradient(90deg,transparent,rgba(255,216,77,.85),transparent);animation-duration:4.3s;animation-delay:-2s}
+.sxw.sxc4{background:linear-gradient(90deg,transparent,rgba(74,222,128,.9),transparent);animation-duration:3.1s;animation-delay:-.6s}
+.sxw.sxc5{background:linear-gradient(90deg,transparent,rgba(56,189,248,.95),transparent);animation-duration:2.2s;animation-delay:-1.5s}
+.sxw.sxc6{background:linear-gradient(90deg,transparent,rgba(139,124,246,.95),transparent);animation-duration:2.9s;animation-delay:-.3s}
+.sxw.sxc7{background:linear-gradient(90deg,transparent,rgba(244,114,182,.95),transparent);animation-duration:3.5s;animation-delay:-2.4s}
+.sxm{position:absolute;width:120px;height:74px;border-radius:50%;opacity:0;filter:blur(7px);mix-blend-mode:screen;transform-origin:40% 60%}
+.sxm-g{background:radial-gradient(ellipse at center,rgba(205,210,225,.34) 0%,transparent 70%)}
+.sxm-v{background:radial-gradient(ellipse at center,rgba(160,140,255,.30) 0%,transparent 70%)}
+.sxm-b{background:radial-gradient(ellipse at center,rgba(110,200,255,.26) 0%,transparent 70%)}
+.sxm-p{background:radial-gradient(ellipse at center,rgba(255,140,200,.26) 0%,transparent 70%)}
+.sxm1{--dx:-130px;--dy:60px;--r:-50deg;--s:3.2;--d:8s;--dl:2.3s}
+.sxm2{--dx:30px;--dy:120px;--r:40deg;--s:3.6;--d:9s;--dl:2.6s}
+.sxm3{--dx:140px;--dy:70px;--r:60deg;--s:3.1;--d:7.5s;--dl:2.9s}
+.sxm4{--dx:-60px;--dy:-100px;--r:-95deg;--s:2.8;--d:10s;--dl:3.3s}
+.sxm5{--dx:70px;--dy:-120px;--r:85deg;--s:2.9;--d:11s;--dl:3.7s}
+.sxm6{--dx:-160px;--dy:130px;--r:-30deg;--s:3.8;--d:9.5s;--dl:4.1s}
+.sxm7{--dx:160px;--dy:140px;--r:45deg;--s:3.6;--d:8.5s;--dl:4.5s}
+.sxm8{--dx:-10px;--dy:160px;--r:-60deg;--s:4;--d:7s;--dl:4.9s}
+.sxm9{--dx:-110px;--dy:-40px;--r:-120deg;--s:3;--d:12s;--dl:5.4s}
+.sxm10{--dx:120px;--dy:-60px;--r:110deg;--s:3.2;--d:10.5s;--dl:5.9s}
+.sxm11{--dx:-40px;--dy:100px;--r:70deg;--s:3.4;--d:8s;--dl:6.4s}
+.sxm12{--dx:60px;--dy:150px;--r:-80deg;--s:3.9;--d:9s;--dl:6.9s}
+.xscene.in .sxm{animation:sxSmoke var(--d) var(--dl) cubic-bezier(.25,.6,.3,1) infinite both}
+.sx-hue{animation:sxHue 6s linear infinite}
+.sx-pulse{animation:sxPulse .5s ease-in-out infinite alternate}
+.xscene.in .sx-walk{animation:sxWalk 8s 5.5s linear infinite both}
+.xscene.in .sx-walk.two{animation-duration:11s;animation-delay:9s}
+/* staged reveal: .in is the settled room; .go adds the entrance timeline on top */
+.sx-room,.sx-slit,.sx-spill,.sx-fan,.sx-haze,.sx-signlit,.sx-ui,.sx-whisper,.sx-card,.sx-feet{opacity:0}
+.xscene.in .sx-room,.xscene.in .sx-slit,.xscene.in .sx-spill,.xscene.in .sx-fan,.xscene.in .sx-haze,.xscene.in .sx-signlit,.xscene.in .sx-ui{opacity:1}
+.xscene.go .sx-x{animation:sxFade .2s 1s both}
+.xscene.go .sx-whisper{animation:sxType 1.8s 1.25s steps(34,end) both}
+.xscene.go .sx-slit{animation:sxFlick .8s 1.9s both}
+.xscene.go .sx-spill{animation:sxFade 1.2s 2.2s both}
+.xscene.go .sx-fan{animation:sxFade 1.5s 2.4s both}
+.xscene.go .sx-haze{animation:sxFade 3s 2.6s both}
+.xscene.go .sx-room{animation:sxAdjust 1.6s 2.8s ease-out both}
+.xscene.go .sx-signlit{animation:sxSignOn 1s 3.7s both}
+.xscene.go .sx-ui{animation:sxRise .8s 4s ease-out both}
+#nav.xnav{background:#040506;border-top-color:#15181D;--text:#F2F4F6;--muted:#9BA3AD}
+#nav.xnav .tab[aria-current="page"] .bar{background:linear-gradient(90deg,#FF5A5F,#FF9F43,#FFD84D,#4ADE80,#38BDF8,#8B7CF6,#F472B6)}
+#nav.sx-navgo{animation:sxFade .6s 4.3s both}
+/* keycard swipe */
+.xscene.sw-on .sx-card{animation:sxCard 1s .05s cubic-bezier(.45,0,.2,1) both}
+.xscene.sw-on .sx-shake{animation:sxJolt .45s .9s both}
+.xscene.sw-on .sx-reader{animation:sxBuzz .3s .88s linear both}
+.xscene.sw-on .sx-lights{animation:sxDim 2.4s .95s both}
+.xscene.sw-on .sx-feet{animation:sxFeet 2.5s .95s both}
+.xscene.sw-on .sx-signbox{animation:sxDim 2.4s 1s both}
+/* the transition out of the previous screen (a frozen copy laid over the phone) and back into it */
+.sx-out{position:absolute;inset:0;z-index:40;pointer-events:none;overflow:hidden;background:#000}
+.sx-home{position:absolute;inset:0;background:var(--bg);animation:sxShut 1.1s linear both}
+.sx-tear{position:absolute;left:0;right:0;top:160px;height:46px;background:linear-gradient(90deg,rgba(255,90,95,.5),rgba(56,189,248,.5),rgba(244,114,182,.5));mix-blend-mode:difference;animation:sxTear .6s .05s steps(7) both}
+.sx-vig{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,transparent 20%,#000 70%);animation:sxVig 1.1s ease-in both}
+.sx-back{animation:sxOn .8s both}
+@keyframes sxShut{0%{filter:none;transform:none}7%{filter:hue-rotate(80deg) saturate(2.6) contrast(1.4);transform:translateX(5px) skewX(-4deg)}13%{filter:hue-rotate(-60deg) saturate(2);transform:translateX(-6px) skewX(3deg)}20%{filter:brightness(1.3);transform:none}32%{filter:brightness(.12)}39%{filter:brightness(.95)}50%{filter:brightness(.04)}57%{filter:brightness(.55)}68%{filter:brightness(0)}100%{filter:brightness(0);opacity:0}}
+@keyframes sxTear{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:0;transform:translateY(520px)}}
+@keyframes sxVig{0%{opacity:0;transform:scale(2.4)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes sxFade{from{opacity:0}to{opacity:1}}
+@keyframes sxOn{0%{filter:brightness(0)}18%{filter:brightness(.9)}26%{filter:brightness(.1)}44%{filter:brightness(1.15)}100%{filter:none}}
+@keyframes sxRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes sxType{0%{opacity:1;clip-path:inset(0 100% 0 0)}55%{opacity:1;clip-path:inset(0 0 0 0)}82%{opacity:1;clip-path:inset(0 0 0 0)}100%{opacity:0;clip-path:inset(0 0 0 0)}}
+@keyframes sxFlick{0%{opacity:0}10%{opacity:1}18%{opacity:.1}30%{opacity:.9}38%{opacity:0}55%{opacity:1}62%{opacity:.35}100%{opacity:1}}
+@keyframes sxAdjust{0%{opacity:0;filter:brightness(.2) blur(3px)}60%{opacity:.85}100%{opacity:1;filter:none}}
+@keyframes sxSignOn{0%{opacity:0}18%{opacity:1}26%{opacity:.1}40%{opacity:1}48%{opacity:.3}100%{opacity:1}}
+@keyframes sxPulse{from{opacity:.55}to{opacity:1}}
+@keyframes sxHue{to{filter:hue-rotate(360deg)}}
+@keyframes sxSwR{from{transform:translateX(-90px)}to{transform:translateX(290px)}}
+@keyframes sxSwL{from{transform:translateX(290px)}to{transform:translateX(-90px)}}
+@keyframes sxSpR{from{transform:translateX(-170px) skewX(-35deg)}to{transform:translateX(360px) skewX(35deg)}}
+@keyframes sxSpL{from{transform:translateX(360px) skewX(35deg)}to{transform:translateX(-170px) skewX(-35deg)}}
+@keyframes sxWalk{0%{transform:translateX(-70px)}40%{transform:translateX(230px)}100%{transform:translateX(230px)}}
+@keyframes sxSmoke{0%{opacity:0;transform:translate(0,0) scale(.35) rotate(0deg)}14%{opacity:1}60%{opacity:.65}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(var(--s)) rotate(var(--r))}}
+@keyframes sxCard{0%{opacity:0;transform:translate(46px,-30px) rotate(14deg)}22%{opacity:1;transform:translate(0,-34px) rotate(0)}30%{transform:translate(0,-34px)}62%{opacity:1;transform:translate(0,96px)}80%{opacity:0;transform:translate(10px,122px) rotate(6deg)}100%{opacity:0;transform:translate(10px,122px) rotate(6deg)}}
+@keyframes sxJolt{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes sxBuzz{0%,100%{transform:none}25%{transform:translateX(-1.5px)}50%{transform:translateX(1.5px)}75%{transform:translateX(-1px)}}
+@keyframes sxDim{0%{opacity:1}8%{opacity:.1}82%{opacity:.1}100%{opacity:1}}
+@keyframes sxFeet{0%{opacity:0;transform:translateX(-50px)}18%{opacity:1;transform:translateX(0)}72%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(150px)}}
+@keyframes sxBlink{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 
 .phone{padding-top:env(safe-area-inset-top,0px)}
@@ -252,3 +362,9 @@ label.l2{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
 .sg .sgico{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .sg .sgt{font-weight:600;min-width:0;flex:0 1 auto}
 .sg .sgs{font-size:12px;color:var(--muted);min-width:0;flex:1}
+
+/* side-scrolling rows: room so focus rings aren't clipped by the row's overflow, and keep focused items off the edges/nav */
+.fgrid,.hrow,.djs{padding-top:4px;padding-bottom:4px;margin-top:-4px;margin-bottom:-4px}
+.hs{scroll-padding-inline:20px}
+#screen{scroll-padding-bottom:160px}
+#screen.nonav{scroll-padding-bottom:0}
