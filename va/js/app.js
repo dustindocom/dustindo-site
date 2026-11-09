@@ -95,7 +95,7 @@ var S={
   pinned:[],
   hot:[],booting:true,sg:{items:[],active:-1,open:false},
   playing:null,isPlaying:false,prog:0,
-  vt:'system',chartL:'hot',chartG:'all',chartE:'all',chartD:'any',chartS:'any',chartM:'any',chartN:50,crateQ:'',meTab:'tapes',xCount:2341,xMuted:false,
+  vt:'system',chartL:'hot',chartG:'all',chartE:'all',chartD:'any',chartS:'any',chartM:'any',chartN:50,crateQ:'',meTab:'tapes',xCount:2341,xMuted:true,
   avatar:0,banner:0,newName:false
 };
 var CTX={};
@@ -509,7 +509,6 @@ function viewX(){
     '<div class="sx-spill"><div class="sx-lights" style="position:absolute;inset:0;overflow:hidden;opacity:.65"><div style="position:absolute;inset:0;background:radial-gradient(ellipse 45% 70% at 50% 0%,rgba(230,228,255,.35),transparent 75%)"></div>'+sw([1,-5,3,-6,4,-7])+'</div></div>'+
     '<div class="sx-fan"><div class="sx-hue" style="position:absolute;inset:0;background:radial-gradient(ellipse 50% 100% at 50% 100%,rgba(139,124,246,.22),transparent 72%)"></div></div>'+
     '<div class="sx-slit"><div class="sx-lights" style="position:absolute;inset:0"><div class="sx-pulse" style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,.6),rgba(255,255,255,.15))"></div>'+sw([1,-2,3,-4,5,-6,7])+'</div>'+
-      '<div class="sx-walk" style="width:34px"></div><div class="sx-walk two" style="width:22px"></div>'+
       '<div class="sx-feet"><span></span><span></span></div></div>'+
     '<div aria-hidden="true" style="position:absolute;left:0;top:430px;width:390px;height:336px;pointer-events:none">'+smoke+'</div>'+
     '<div class="sx-haze"></div>'+
@@ -587,7 +586,71 @@ function xSwipe(){
   xLater(function(){if(xSoundOn())xLevel(.8,1.2)},3000);
   xLater(function(){X.sw=false;X.reader='';r.classList.remove('sw-on');xUpd()},3500);
 }
- 
+
+/* ---------- people walking past behind the door: two feet each, seen in the light gap ----------
+   One foot stays planted while the other swings past it and lands a step ahead; then, after a beat with both
+   feet down, the back one goes. As a back foot pushes off, light slips in under its rising heel first.
+   Faster walkers take bigger strides. At most two people at once; no walkers with reduced motion. */
+var XW={list:[],raf:0,scene:null,clock:0,last:0,next:0,lastKind:''};
+/* feet are 26px long; v is px/s, T one full two-step cycle, so each step is v*T/2 (slow ≈28px, normal ≈38px, hurried ≈78px) */
+var XW_T={slow:{v:32,T:1.75,swing:.3},norm:{v:60,T:1.27,swing:.34},fast:{v:152,T:1.02,swing:.42}};
+var XW_MIX=[['slow',.3],['norm',.3],['fast',.4]], XW_F=26, XW_PAD=8;
+function xwEase(p){return p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2}
+function xwCl(v){return Math.max(0,Math.min(1,v))}
+function xwStart(){if(!XW.raf&&!xReduced())XW.raf=requestAnimationFrame(xwFrame)}
+function xwEl(parent){var e=document.createElement('i');parent.appendChild(e);return e}
+function xwSpawn(sc){
+  /* keep the paces mixed: never repeat the last walker's pace or match whoever is still walking */
+  var busy={},pool=[],sum=0,kind='norm';
+  busy[XW.lastKind]=1; XW.list.forEach(function(w){busy[w.kind]=1});
+  XW_MIX.forEach(function(m){if(!busy[m[0]]){pool.push(m);sum+=m[1]}});
+  if(!pool.length){pool=XW_MIX;sum=1}
+  var r=Math.random()*sum;
+  for(var j=0;j<pool.length;j++){if((r-=pool[j][1])<0){kind=pool[j][0];break}}
+  XW.lastKind=kind;
+  var t=XW_T[kind],slit=sc.querySelector('.sx-slit');
+  var w={kind:kind,v:t.v,T:t.T,swing:t.swing,dir:Math.random()<.5?1:-1,t0:XW.clock,feet:[]};
+  w.reach=t.v*t.T+XW_F+40;
+  for(var i=0;i<2;i++)w.feet.push(xwEl(slit));
+  XW.list.push(w);
+}
+/* where foot i is at time t: its front (toe) edge, length, how far the heel has lifted, and how far off the floor it is */
+function xwFoot(w,t,i){
+  var L=w.v*w.T,c=t/w.T-(i?.5:0),n=Math.floor(c),p=c-n,base=n*L+(i?L/2:0),stand=1-w.swing,peel=.3;
+  if(p<stand){var k=xwEase(xwCl((p-(stand-peel))/peel));return {front:base+XW_F,width:XW_F*(1-.2*k),heel:k,toe:0,lift:k*.3}}
+  var q=(p-stand)/w.swing,land=xwEase(xwCl((q-.62)/.38)),air=Math.sin(Math.PI*Math.min(q,.85)/.85)*(1-land);
+  return {front:base+XW_F+L*xwEase(q),width:XW_F*(.6+.4*land),heel:(1-land)*(1-q*.6),toe:(1-land)*.8,lift:.3+.7*air};
+}
+/* soft only at the sides: heel end fades as it lifts, toe end stays darkest */
+function xwPaint(e,dir,total,pad,o){
+  var P=pad/total*100,body=100-2*P,toeSoft=P*(1+o.lift),heelEnd=P+body*(.08+.6*o.heel);
+  var c=function(a){return 'rgba(4,5,6,'+a.toFixed(3)+')'};
+  e.style.background='linear-gradient('+(dir>0?90:270)+'deg,transparent '+(P*.2).toFixed(1)+'%,'+c(o.a*(1-.85*o.heel))+' '+(P+1).toFixed(1)+'%,'+
+    c(o.a*(1-.15*o.heel))+' '+heelEnd.toFixed(1)+'%,'+c(o.a*(1-.25*o.toe))+' '+(100-toeSoft).toFixed(1)+'%,transparent 100%)';
+}
+function xwFrame(ms){
+  XW.raf=0;
+  var sc=document.querySelector('.xscene'); if(!sc){XW.list=[];XW.scene=null;return}
+  if(sc!==XW.scene){XW.scene=sc;XW.list=[];XW.clock=0;XW.last=ms;XW.next=sc.classList.contains('go')?5:1.5}
+  XW.clock+=Math.min(.1,(ms-XW.last)/1000); XW.last=ms;
+  if(XW.clock>XW.next){if(XW.list.length<2)xwSpawn(sc);XW.next=XW.clock+3+Math.random()*4}
+  XW.list=XW.list.filter(function(w){
+    var t=XW.clock-w.t0,mid=0;
+    w.feet.forEach(function(f,i){
+      var fp=xwFoot(w,t,i),left=-w.reach+fp.front-fp.width;
+      if(w.dir<0)left=200-left-fp.width;
+      mid+=(left+fp.width/2)/2;
+      var tot=fp.width+2*XW_PAD;
+      f.style.width=tot+'px'; f.style.transform='translateX('+(left-XW_PAD)+'px)';
+      xwPaint(f,w.dir,tot,XW_PAD,{a:1-fp.lift*.4,heel:fp.heel,toe:fp.toe,lift:fp.lift});
+    });
+    var done=w.dir>0?mid>200+w.reach:mid<-w.reach;
+    if(done)w.feet.forEach(function(e){e.remove()});
+    return !done;
+  });
+  XW.raf=requestAnimationFrame(xwFrame);
+}
+
 function viewSplash(){return '<div style="display:flex;align-items:center;justify-content:center;height:100%">'+LOGO(150,103)+'</div>'}
 function viewSignin(){
   return '<div class="signin">'+LOGO(150,103)+'<h1>Who\'s playing?</h1><p>Pick a DJ name, or leave it blank to join as Guest DJ. You can start building MixTapes right away.</p>'+
@@ -689,7 +752,7 @@ function render(opts){
   $('#nav').style.display=nonav?'none':'flex';
   $('#nav').classList.toggle('xnav',!!isX);
   $('#nav').classList.toggle('sx-navgo',!!isX&&Date.now()<X.navUntil);
-  if(isX){xFit();xMuteBtn()}
+  if(isX){xFit();xMuteBtn();xwStart()}
   $('#nav').innerHTML=nonav?'':[['home','Home'],['charts','Charts'],['x','StudioX'],['crate','Crate'],['me','Me']].map(function(t){
     var cur=S.tab===t[0]&&!(top&&0);
     return '<div class="tabw"><button class="tab" data-a="tab:'+t[0]+'" aria-current="'+(cur?'page':'false')+'"><div class="bar"></div>'+ic(t[0],24,{sw:t[0]==='x'?3.2:1.8})+'<div>'+t[1]+'</div></button></div>';

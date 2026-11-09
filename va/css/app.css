@@ -246,7 +246,7 @@ label.l2{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
 .sx-spill{position:absolute;left:25px;top:589px;width:340px;height:160px;filter:blur(12px);-webkit-mask-image:radial-gradient(ellipse 55% 100% at 50% 0%,#000 0%,rgba(0,0,0,.55) 35%,transparent 80%);mask-image:radial-gradient(ellipse 55% 100% at 50% 0%,#000 0%,rgba(0,0,0,.55) 35%,transparent 80%)}
 .sx-fan{position:absolute;left:85px;top:515px;width:220px;height:74px}
 .sx-slit{position:absolute;left:95px;top:586px;width:200px;height:4px;overflow:hidden;background:#241E2E;box-shadow:0 0 12px 2px rgba(170,160,255,.4)}
-.sx-walk{position:absolute;left:0;top:0;height:4px;background:#040506;border-radius:2px}
+.sx-slit>i{position:absolute;top:0;left:0;height:100%}
 .sx-feet{position:absolute;left:80px;top:0;width:40px;height:4px;display:flex;gap:10px}
 .sx-feet span{width:15px;height:4px;background:#040506}
 .sx-haze{position:absolute;left:-400px;top:560px;width:1190px;height:206px;pointer-events:none;background:linear-gradient(rgba(150,160,200,0),rgba(150,160,200,.07) 40%,rgba(150,160,200,.03))}
@@ -293,8 +293,6 @@ label.l2{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
 .xscene.in .sxm{animation:sxSmoke var(--d) var(--dl) cubic-bezier(.25,.6,.3,1) infinite both}
 .sx-hue{animation:sxHue 6s linear infinite}
 .sx-pulse{animation:sxPulse .5s ease-in-out infinite alternate}
-.xscene.in .sx-walk{animation:sxWalk 8s 5.5s linear infinite both}
-.xscene.in .sx-walk.two{animation-duration:11s;animation-delay:9s}
 /* staged reveal: .in is the settled room; .go adds the entrance timeline on top */
 .sx-room,.sx-slit,.sx-spill,.sx-fan,.sx-haze,.sx-signlit,.sx-ui,.sx-whisper,.sx-card,.sx-feet{opacity:0}
 .xscene.in .sx-room,.xscene.in .sx-slit,.xscene.in .sx-spill,.xscene.in .sx-fan,.xscene.in .sx-haze,.xscene.in .sx-signlit,.xscene.in .sx-ui{opacity:1}
@@ -339,7 +337,6 @@ label.l2{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
 @keyframes sxSwL{from{transform:translateX(290px)}to{transform:translateX(-90px)}}
 @keyframes sxSpR{from{transform:translateX(-170px) skewX(-35deg)}to{transform:translateX(360px) skewX(35deg)}}
 @keyframes sxSpL{from{transform:translateX(360px) skewX(35deg)}to{transform:translateX(-170px) skewX(-35deg)}}
-@keyframes sxWalk{0%{transform:translateX(-70px)}40%{transform:translateX(230px)}100%{transform:translateX(230px)}}
 @keyframes sxSmoke{0%{opacity:0;transform:translate(0,0) scale(.35) rotate(0deg)}14%{opacity:1}60%{opacity:.65}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(var(--s)) rotate(var(--r))}}
 @keyframes sxCard{0%{opacity:0;transform:translate(46px,-30px) rotate(14deg)}22%{opacity:1;transform:translate(0,-34px) rotate(0)}30%{transform:translate(0,-34px)}62%{opacity:1;transform:translate(0,96px)}80%{opacity:0;transform:translate(10px,122px) rotate(6deg)}100%{opacity:0;transform:translate(10px,122px) rotate(6deg)}}
 @keyframes sxJolt{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
