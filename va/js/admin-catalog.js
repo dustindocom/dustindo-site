@@ -1,8 +1,9 @@
-/* Catalog status for the admin page. Reads data/charts.json (built by the "Refresh charts" workflow
-   on the charts branch). Needs no sign-in and works with or without Firebase. */
+/* Catalog status for the admin page. Reads charts.json from the repo's charts branch (the "Refresh charts"
+   workflow commits it there), or a local data/charts.json. Needs no sign-in and works with or without Firebase. */
 (function(){
 'use strict';
 var REPO='https://github.com/dustindocom/dustindo-site';
+var DATA_URL='https://raw.githubusercontent.com/dustindocom/dustindo-site/charts/charts.json', src='';
 var $=function(s){return document.querySelector(s)};
 var box=$('#catalog'), body=$('#catbody');
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
@@ -30,7 +31,7 @@ function render(d){
   var gRows=Object.keys(byG).sort(function(a,b){return byG[b]-byG[a]}).map(function(k){return [G[k]||k,byG[k]]});
   var dRows=(d.decades||Object.keys(byD)).map(function(k){return [k,byD[k]||0]});
   var h='';
-  h+='<div class="stat"><span class="dot '+fresh[0]+'"></span><b>'+fresh[1]+'</b><span class="muted"> · built '+esc(ago(d.updated))+' ('+esc(new Date(d.updated).toLocaleString())+')</span></div>';
+  h+='<div class="stat"><span class="dot '+fresh[0]+'"></span><b>'+fresh[1]+'</b><span class="muted"> · built '+esc(ago(d.updated))+' ('+esc(new Date(d.updated).toLocaleString())+') · from '+esc(src)+'</span></div>';
   h+='<div class="kpis">'+
      '<div><b>'+n(S.length)+'</b><span>songs</span></div>'+
      '<div><b>'+(st?'+'+n(st.added):'–')+'</b><span>new last run</span></div>'+
@@ -48,11 +49,13 @@ function render(d){
 }
 
 function load(){
-  body.innerHTML='<p class="muted">Loading data/charts.json…</p>';
-  fetch('data/charts.json',{cache:'no-cache'}).then(function(r){
-    if(!r.ok)throw new Error('data/charts.json not found ('+r.status+'). Locally, run: node va/scripts/get-data.mjs');
-    return r.json();
-  }).then(render).catch(function(e){body.innerHTML='<p class="bad">'+esc(e.message||e)+'</p>'});
+  body.innerHTML='<p class="muted">Loading the catalog from the charts branch…</p>';
+  var get=function(u){return fetch(u,{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})};
+  get(DATA_URL).then(function(d){src='GitHub charts branch';return d},function(){
+    return get('data/charts.json').then(function(d){src='local data/charts.json';return d});
+  }).then(render).catch(function(){
+    body.innerHTML='<p class="bad">Could not load the catalog from the charts branch or data/charts.json. Run Refresh charts, or locally run: node va/scripts/get-data.mjs</p>';
+  });
 }
 $('#catrun').href=REPO+'/actions/workflows/charts.yml';
 $('#cathist').href=REPO+'/commits/charts';

@@ -1,6 +1,6 @@
 // Builds data/charts.json for VA by DD. Runs in GitHub Actions every 6 hours (Node 20+, no dependencies).
 // The data lives on the `charts` branch, not main: the workflow checks that branch out into va/data,
-// runs this script, and commits the result there. The "Deploy site" workflow joins main + charts for Pages.
+// runs this script, and commits the result there. The app reads it from that branch on raw.githubusercontent.com.
 // charts.json is a growing library, not a snapshot. Each run:
 //   1. loads the previous charts.json, so no song is ever lost
 //   2. refreshes the hot chart from Apple's "most played" top 100 and logs each song's days on the chart

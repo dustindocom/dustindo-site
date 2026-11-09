@@ -36,8 +36,12 @@ function preferClean(rs){
 }
 w.VAApi={
   genreKey:genreKey,
+  /* The catalog lives on the repo's `charts` branch (the bot commits it there every 6 hours), read straight from GitHub.
+     Falls back to a local data/charts.json (node va/scripts/get-data.mjs) for working offline. */
+  CHARTS_URL:'https://raw.githubusercontent.com/dustindocom/dustindo-site/charts/charts.json',
   loadCharts:function(){
-    return fetch('data/charts.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error('charts '+r.status);return r.json()});
+    var get=function(u){return fetch(u,{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error('charts '+r.status);return r.json()})};
+    return get(w.VAApi.CHARTS_URL).catch(function(){return get('data/charts.json')});
   },
   search:function(term){
     var u='https://itunes.apple.com/search?media=music&entity=song&country=US&limit=40&term='+encodeURIComponent(term);
