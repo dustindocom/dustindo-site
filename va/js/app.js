@@ -143,7 +143,9 @@ function applyLoad(r){
     DJS=VASeed.DJS.map(function(d){var f=fd[d.id];return f?Object.assign({},d,f,{style:f.style||d.style}):d})
       .concat(rd.filter(function(d){return !VASeed.DJS.some(function(x){return x.id===d.id})}));
     RISE=rd.length?rd.map(function(d){return d.id}):VASeed.RISE.slice();
-    S.tapes=r.tapes.map(function(t){return {id:t.id,title:t.title,owner:t.owner===me?'me':t.owner,songs:t.songs.map(unsnap),updated:t.updated||0,premade:!!DB(t.owner)}});
+    /* the database doesn't store mood tags or the main genre; starter tapes get theirs back from the seed */
+    var spec={};VASeed.SPEC.forEach(function(sp){spec[sp[0]]=sp});
+    S.tapes=r.tapes.map(function(t){var sp=spec[t.id];return {id:t.id,title:t.title,owner:t.owner===me?'me':t.owner,songs:t.songs.map(unsnap),updated:t.updated||0,premade:!!DB(t.owner),tags:sp?sp[3].slice():[],genre:sp?sp[4]:null}});
   }else{
     DJS=VASeed.DJS.slice();RISE=VASeed.RISE.slice();
     var mt=r.mine.map(function(t){return {id:t.id,title:t.title,owner:'me',songs:t.songs.map(unsnap),updated:t.updated}});
@@ -152,6 +154,7 @@ function applyLoad(r){
   }
   S.tapes.forEach(function(t){if(!t.genre){var f=t.songs.length&&SB(t.songs[0]);t.genre=f?f.g:'pop'}});
   S.hot=(r.hot||VASeed.HOT).slice();
+  S.likeBase=r.likes||{};
   var pr=r.profile;
   if(pr){
     S.liked={};(pr.likedSongs||[]).forEach(function(o){S.liked[unsnap(o)]=1});
@@ -201,6 +204,72 @@ function mostMixed(){
   S.tapes.forEach(function(t){t.songs.forEach(function(id){c[id]=(c[id]||0)+1})});
   return Object.keys(c).map(function(k){return {id:k,n:c[k]}}).filter(function(m){return SB(m.id)}).sort(function(a,b){return b.n-a.n});
 }
+/* likes: other DJs' likes from the database, plus yours, so the count moves the moment you tap the heart */
+function likeCount(id){return ((S.likeBase||{})[id]||0)+(S.likedTapes.indexOf(id)>=0?1:0)}
+function popularTapes(){
+  return S.tapes.map(function(t,i){return {t:t,i:i,n:likeCount(t.id)}})
+    .sort(function(a,b){return b.n-a.n||a.i-b.i}).map(function(x){return x.t});
+}
+/* Home's Hot MixTapes: the admin's picks first, then the most liked, 20 in all */
+var HOT_N=20;
+function hotTapes(){
+  var out=S.hot.map(tapeBy).filter(Boolean);
+  popularTapes().forEach(function(t){if(out.length<HOT_N&&out.indexOf(t)<0&&t.songs.length)out.push(t)});
+  return out.slice(0,HOT_N);
+}
+/* ---------- tags: genre (g), style (st) and mood (md) ---------- */
+var MOODL={chill:'Chill',party:'Party','feel-good':'Feel-good',love:'Love songs',heartbreak:'Heartbreak',workout:'Workout',summer:'Summer & road trips',holiday:'Holiday'};
+function tagLabel(kind,k){
+  var V=CHARTS.vocab||{};
+  if(kind==='g') return G[k]||k;
+  if(kind==='st') return (V.styles&&V.styles[k])?V.styles[k][0]:k;
+  return (V.moods&&V.moods[k])||MOODL[k]||k;
+}
+function songTags(s){
+  var out=[];if(!s) return out;
+  if(s.g&&G[s.g])out.push(['g',s.g]);
+  (s.st||[]).forEach(function(k){out.push(['st',k])});
+  (s.md||[]).forEach(function(k){out.push(['md',k])});
+  return out;
+}
+/* a MixTape's genres (most songs first), then its moods */
+function tapeTags(t){
+  var n={};t.songs.forEach(function(id){var x=SB(id);if(x&&x.g&&G[x.g])n[x.g]=(n[x.g]||0)+1});
+  if(t.genre&&G[t.genre]&&!n[t.genre])n[t.genre]=0;
+  var gs=Object.keys(n).sort(function(a,b){return (b===t.genre)-(a===t.genre)||n[b]-n[a]});
+  return gs.map(function(k){return ['g',k]}).concat((t.tags||[]).map(function(k){return ['md',k]}));
+}
+function tagRow(tags,style){
+  if(!tags.length) return '';
+  return '<div class="tags" role="list" aria-label="Tags"'+(style?' style="'+style+'"':'')+'>'+tags.map(function(tg){
+    return '<button class="tag'+(tg[0]==='md'?' mood':'')+'" role="listitem" data-a="tagview:'+tg[0]+':'+tg[1]+'">'+esc(tagLabel(tg[0],tg[1]))+'</button>'}).join('')+'</div>';
+}
+function songHas(x,kind,k){return kind==='g'?x.g===k:kind==='st'?hasStyle(x,k):hasMood(x,k)}
+/* MixTapes in a tag, most liked first, then the ones with the most matching songs */
+function tapesFor(kind,k){
+  return S.tapes.map(function(t,i){
+    var c=0;t.songs.forEach(function(id){var x=SB(id);if(x&&songHas(x,kind,k))c++});
+    var on=kind==='md'?(t.tags||[]).indexOf(k)>=0||c>=2:kind==='g'?(t.genre===k||c*2>=t.songs.length)&&c>0:c>0;
+    return on&&t.songs.length?{t:t,c:c,i:i,n:likeCount(t.id)}:null;
+  }).filter(Boolean).sort(function(a,b){return b.n-a.n||b.c-a.c||a.i-b.i}).map(function(x){return x.t});
+}
+/* hot songs in a tag: the library is already ordered hot chart first, then popularity.
+   Moods are still being tagged, so songs from that mood's MixTapes fill in after the tagged ones. */
+function songsFor(kind,k,tapes){
+  var list=SONGS.filter(function(x){return songHas(x,kind,k)});
+  if(kind!=='g'){
+    var seen={};list.forEach(function(x){seen[x.id]=1});
+    var c={};tapes.forEach(function(t){t.songs.forEach(function(id){if(!seen[id]&&SB(id))c[id]=(c[id]||0)+1})});
+    list=list.concat(Object.keys(c).sort(function(a,b){return c[b]-c[a]}).map(SB));
+  }
+  return list;
+}
+function hotCard(t){
+  var n=likeCount(t.id);
+  return '<button class="hcard" data-a="tape:'+t.id+'" title="'+esc(t.title)+'"><div class="hcover" style="'+coverStyle(t)+'"><div class="chip">'+t.songs.length+' songs</div>'+
+   '<div class="chip lk" aria-label="'+n+(n===1?' like':' likes')+'">'+ic('heart',11,{fill:'currentColor',sw:0})+n+'</div></div>'+
+   '<div class="n ell">'+esc(t.title)+'</div><div class="b ell">'+esc(ownerName(t))+'</div></button>';
+}
 function songCount(id){var n=0;S.tapes.forEach(function(t){if(t.songs.indexOf(id)>=0)n++});return n}
 var curSong=function(){return S.playing?SB(S.playing.songId):null};
 var meAv=function(){var a=AVPRESETS[S.avatar];return AVK(a[0],a[1])};
@@ -241,23 +310,23 @@ function topbar(title,right){
  
 /* ---------- views ---------- */
 function viewHome(){
-  var favs=favTapes(), list=favs.length?favs:S.hot.map(tapeBy).filter(Boolean);
+  var list=favTapes();
   var pinCount=S.pinned.filter(function(id){return S.likedTapes.indexOf(id)>=0}).length;
   var tiles=list.map(function(t){
     var p=S.pinned.indexOf(t.id)>=0&&S.likedTapes.indexOf(t.id)>=0;
-    return '<button class="ftile" style="'+coverStyle(t)+'" data-a="tape:'+t.id+'" data-lp="tapemore:'+t.id+'" aria-label="'+esc(t.title)+(p?', pinned':'')+'"><div class="scr"></div>'+
+    return '<button class="ftile" style="'+coverStyle(t)+'" data-a="tape:'+t.id+'" data-lp="tapemore:'+t.id+'" title="'+esc(t.title)+'" aria-label="'+esc(t.title)+(p?', pinned':'')+'"><div class="scr"></div>'+
      (p?'<div class="pin">'+ic('pin',12,{sw:2})+'</div>':'')+'<div class="tt">'+esc(t.title)+'</div></button>';
   }).join('');
   var mm=mostMixed();
   var mmList=mm.map(function(m){return m.id});
   var mmCap=capped('mm',mm,5);
   var mmRows=mmCap.items.map(function(m,i){return row(SB(m.id),{rank:i+1,key:'mm',list:mmList,sub:esc(SB(m.id).a)+' · In '+m.n+' MixTapes'})}).join('')+mmCap.btn;
-  var hot=S.hot.filter(tapeBy).map(function(id){var t=tapeBy(id);
-    return '<button class="hcard" data-a="tape:'+t.id+'"><div class="hcover" style="'+coverStyle(t)+'"><div class="chip">'+t.songs.length+' songs</div></div><div class="n ell">'+esc(t.title)+'</div><div class="b ell">'+esc(ownerName(t))+'</div></button>'}).join('');
+  var hot=hotTapes().map(hotCard).join('');
   var djs=RISE.map(DB).filter(Boolean).map(function(d){return '<button class="dj" data-a="dj:'+d.id+'"><div class="c" style="'+AVK(d.av[0],d.av[1])+'"></div><div class="n ell">'+d.name+'</div><div class="s ell">'+d.style+'</div></button>'}).join('');
   return header()+
-   '<section style="padding-top:14px"><div class="sh" style="align-items:center"><h2>'+(favs.length?'Favorite MixTapes':'Hot MixTapes')+'</h2><div class="cap" style="display:flex;align-items:center;gap:5px">'+ic('pin',14)+pinCount+' pinned · hold a tile to pin</div></div><div class="fgrid hs">'+tiles+'</div></section>'+
-   '<section class="sec"><div class="sh"><h2>Hot MixTapes</h2><div class="cap">Picked by DJDustin</div></div>'+(hot?'<div class="hrow hs">'+hot+'</div>':'<div class="empty" style="padding:8px 20px">No Hot MixTapes yet. They appear here once the admin picks them.</div>')+'</section>'+
+   '<section style="padding-top:14px"><div class="sh" style="align-items:center"><h2>Saved MixTapes</h2>'+(list.length?'<div class="cap" style="display:flex;align-items:center;gap:5px">'+ic('pin',14)+pinCount+' pinned · hold a tile to pin</div>':'')+'</div>'+
+   (list.length?'<div class="fgrid hs">'+tiles+'</div>':'<div class="empty" style="padding:8px 20px">No saved MixTapes yet. Tap the heart on any MixTape to keep it here.</div>')+'</section>'+
+   '<section class="sec"><div class="sh"><h2>Hot MixTapes</h2><button class="btn0 seemore" data-a="popular">See More</button></div>'+(hot?'<div class="hrow hs">'+hot+'</div>':'<div class="empty" style="padding:8px 20px">No Hot MixTapes yet.</div>')+'</section>'+
    '<section class="sec"><div class="sh" style="padding-bottom:4px"><h2>Most Mixed</h2><div class="cap">Songs in the most MixTapes</div></div>'+mmRows+'</section>'+
    '<section style="padding-top:26px"><div class="sh" style="padding-bottom:14px"><h2>DJs on the Rise</h2></div><div class="djs hs">'+djs+'</div></section>';
 }
@@ -473,13 +542,33 @@ function viewTape(id){
   return topbar('',own?'':'')+
    '<div class="tcover" style="'+coverStyle(t)+'"></div>'+
    '<div class="tmeta"><h1>'+esc(t.title)+'</h1><div class="by">by '+(own?'<span style="font-weight:600;color:var(--text)">'+esc(ownerName(t))+'</span>':'<button data-a="dj:'+t.owner+'">'+esc(ownerName(t))+'</button>')+'</div>'+
-   '<span class="cnt'+(t.songs.length>=lim?' full':'')+'">'+t.songs.length+'/'+lim+' songs'+(t.songs.length>=lim?' · full':'')+'</span></div>'+
+   '<span class="cnt'+(t.songs.length>=lim?' full':'')+'">'+t.songs.length+'/'+lim+' songs'+(t.songs.length>=lim?' · full':'')+'</span>'+
+   '<span class="cnt">'+ic('heart',12,{fill:'currentColor',sw:0}).replace('<svg','<svg style="vertical-align:-1px;margin-right:4px"')+likeCount(t.id)+(likeCount(t.id)===1?' like':' likes')+'</span>'+
+   tagRow(tapeTags(t),'justify-content:center;padding:12px 0 0')+'</div>'+
    '<div class="acts"><button class="pill" data-a="playtape:'+t.id+'"'+(t.songs.length?'':' disabled style="opacity:.4"')+'>'+PLAY+' Play</button>'+
    '<button class="round'+(liked?' on':'')+'" data-a="liketape:'+t.id+'" aria-label="'+(liked?'Unlike MixTape':'Like MixTape')+'" aria-pressed="'+liked+'">'+ic('heart',22,{fill:liked?'currentColor':'none'})+'</button>'+
    '<button class="round'+(pinned?' on':'')+(liked?'':'" disabled style="opacity:.4')+'" data-a="pintape:'+t.id+'" aria-label="'+(pinned?'Unpin':'Pin to top of Favorites')+'" aria-pressed="'+pinned+'">'+ic('pin',20,{fill:pinned?'currentColor':'none'})+'</button>'+
    '<button class="round" data-a="tapemore:'+t.id+'" aria-label="More options">'+DOTS+'</button></div>'+rows;
 }
  
+/* one genre, style or mood: its hot songs and its MixTapes */
+function viewTag(kind,k){
+  var label=tagLabel(kind,k), tapes=tapesFor(kind,k), songs=songsFor(kind,k,tapes);
+  var key='tg'+kind+k, ids=songs.map(function(s){return s.id}), sc=capped(key,songs,10);
+  var what=kind==='g'?'Genre':kind==='st'?'Style':'Mood';
+  return topbar(label)+
+   '<div class="pagehead" style="padding-top:4px"><p>'+what+' · '+songs.length+' songs · '+tapes.length+' MixTapes</p></div>'+
+   (tapes.length?'<section style="padding-top:14px"><div class="sh"><h2>Hot MixTapes</h2><div class="cap">Most liked first</div></div><div class="hrow hs" aria-label="MixTapes in '+esc(label)+'">'+tapes.slice(0,HOT_N).map(hotCard).join('')+'</div></section>':'')+
+   '<section class="sec"><div class="sh" style="padding-bottom:4px"><h2>Hot songs</h2><div class="cap">'+esc(label)+'</div></div>'+
+   (songs.length?sc.items.map(function(s,i){return row(s,{rank:i+1,key:key,list:ids})}).join('')+sc.btn:'<div class="empty"><b>No songs here yet</b>The library is tagged every few hours. Check back soon.</div>')+'</section>';
+}
+/* See More from Home: every MixTape, most liked first */
+function viewPopular(){
+  var ts=popularTapes().filter(function(t){return t.songs.length}), tc=capped('popular',ts,24);
+  return topbar('Popular MixTapes')+'<div class="pagehead" style="padding-top:4px"><p>Every MixTape, most liked first.</p></div><div class="tgrid">'+
+   tc.items.map(function(t){var n=likeCount(t.id);return '<button class="tg" data-a="tape:'+t.id+'" title="'+esc(t.title)+'"><div class="c" style="'+coverStyle(t)+'"></div><div class="n ell">'+esc(t.title)+'</div><div class="b ell">'+
+     ic('heart',11,{fill:'currentColor',sw:0}).replace('<svg','<svg style="vertical-align:-1px;margin-right:3px"')+n+' · '+esc(ownerName(t))+'</div></button>'}).join('')+'</div>'+tc.btn;
+}
 function viewDj(id){
   var d=DB(id)||{id:id,name:id,style:'',av:['graphite','dots']}, ts=S.tapes.filter(function(t){return t.owner===id}), tc=capped('dj'+id,ts,8);
   return topbar('')+
@@ -697,7 +786,8 @@ function sheetHtml(){
   var wrap=function(inner){return '<div class="scrim" data-a="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>'+inner+'</div>'};
   if(sh.type==='song'){
     var s=SB(sh.id), liked=!!S.liked[s.id];
-    return wrap('<div style="display:flex;gap:12px;align-items:center;padding:0 20px 10px"><div class="art" style="width:44px;height:44px;border-radius:9px;'+sart(s)+'"></div><div style="min-width:0"><div class="ell" style="font-weight:600">'+esc(s.t)+'</div><div class="ell muted" style="font-size:13px">'+esc(s.a)+' · '+G[s.g]+'</div></div></div>'+
+    return wrap('<div style="display:flex;gap:12px;align-items:center;padding:0 20px 10px"><div class="art" style="width:44px;height:44px;border-radius:9px;'+sart(s)+'"></div><div style="min-width:0"><div class="ell" style="font-weight:600">'+esc(s.t)+'</div><div class="ell muted" style="font-size:13px">'+esc(s.a)+'</div></div></div>'+
+     tagRow(songTags(s),'padding:0 20px 12px')+
      '<button class="srow" data-a="add:'+s.id+'"><span class="ico">'+ic('plus',22)+'</span>Add to MixTape</button>'+
      '<button class="srow" data-a="like:'+s.id+':keep"><span class="ico" style="color:'+(liked?'var(--hi)':'')+'">'+ic('heart',22,{fill:liked?'currentColor':'none'})+'</span>'+(liked?'Remove from liked music':'Add to liked music')+'</button>'+
      (sh.tape?'<button class="srow danger" data-a="rmsong:'+s.id+':'+sh.tape+'"><span class="ico" style="color:inherit">'+ic('trash',22)+'</span>Remove from this MixTape</button>':'')+
@@ -769,7 +859,7 @@ function render(opts){
   if(!S.user){html=S.booting?viewSplash():viewSignin();nonav=true}
   else if(keepX){html=null}
   else if(top){
-    html= top.type==='tape'?viewTape(top.id): top.type==='dj'?viewDj(top.id): top.type==='settings'?viewSettings():'';
+    html= top.type==='tape'?viewTape(top.id): top.type==='dj'?viewDj(top.id): top.type==='settings'?viewSettings(): top.type==='tag'?viewTag(top.kind,top.key): top.type==='popular'?viewPopular():'';
   }else{
     html={home:viewHome,charts:viewCharts,x:viewX,crate:viewCrate,me:viewMe}[S.tab]();
   }
@@ -950,6 +1040,11 @@ function act(a,p,el,e){
     case 'tape': var ht=tapeBy(p[0]);if(ht)hydrate(ht.songs);go({type:'tape',id:p[0]});break;
     case 'dj': go({type:'dj',id:p[0]});break;
     case 'settings': go({type:'settings'});break;
+    case 'tagview':
+      var tv=tapesFor(p[0],p[1]),sv=songsFor(p[0],p[1],tv).slice(0,10).map(function(x){return x.id});
+      tv.slice(0,HOT_N).forEach(function(x){sv=sv.concat(x.songs.slice(0,4))});hydrate(sv);
+      go({type:'tag',kind:p[0],key:p[1]});break;
+    case 'popular': go({type:'popular'});break;
     case 'account': S.pop=!S.pop;break;
     case 'close': closeSheet();break;
     case 'play': play(p[0],p[1]);break;

@@ -84,7 +84,9 @@ h2{font-size:18px;font-weight:600}
 .ftile .tt{position:absolute;left:8px;right:8px;bottom:7px;font-size:11px;font-weight:600;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pin{position:absolute;left:6px;top:6px;width:22px;height:22px;border-radius:50%;background:rgba(14,16,20,.72);display:flex;align-items:center;justify-content:center}
 .hrow{display:flex;gap:12px;overflow-x:auto;padding:0 20px}
-.hcard{flex:0 0 128px;text-align:left;background:none;border:0;padding:0}
+.hcard{flex:0 0 128px;width:128px;min-width:0;text-align:left;background:none;border:0;padding:0}
+.hcard .n,.hcard .b{max-width:100%}
+.chip.lk{left:auto;right:9px;display:flex;align-items:center;gap:4px}
 .hcover{width:128px;height:128px;border-radius:14px;position:relative;overflow:hidden}
 .hcover:after{content:"";position:absolute;right:-24px;top:-24px;width:92px;height:92px;border-radius:50%;border:15px solid rgba(244,241,234,.14)}
 .chip{position:absolute;left:9px;bottom:9px;padding:3px 8px;border-radius:99px;background:rgba(14,16,20,.62);color:#F4F1EA;font-size:11px;font-weight:500;z-index:1}
@@ -144,6 +146,7 @@ label.l2{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
 .tmeta .by{margin-top:4px;font-size:14px;color:var(--muted)}
 .tmeta .by button{background:none;border:0;padding:0;color:var(--text);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
 .cnt{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:99px;background:var(--surface2);font-size:12px;font-weight:600}
+.tmeta .cnt+.cnt{margin-left:6px}
 .cnt.full{background:color-mix(in srgb,var(--hi) 24%,var(--bg))}
 .acts{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 20px 10px}
 .round{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text)}
@@ -159,8 +162,8 @@ label.l2{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
 .seg{display:flex;background:var(--surface2);border-radius:12px;padding:3px;gap:3px}
 .seg button{flex:1;height:38px;border-radius:9px;border:0;background:none;font-size:14px;font-weight:500;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--bg);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.15)}
-.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 20px}
-.tg{text-align:left;background:none;border:0;padding:0}
+.tgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:14px 20px}
+.tg{text-align:left;background:none;border:0;padding:0;min-width:0}
 .tg .c{aspect-ratio:1;border-radius:14px;position:relative;overflow:hidden}
 .tg .n{margin-top:6px;font-size:14px;font-weight:600}
 .tg .b{font-size:12px;color:var(--muted)}
@@ -365,3 +368,11 @@ label.l2{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}
 .hs{scroll-padding-inline:20px}
 #screen{scroll-padding-bottom:160px}
 #screen.nonav{scroll-padding-bottom:0}
+
+/* tags: genre, style and mood chips on songs and MixTapes; each opens that tag's page */
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{height:28px;padding:0 11px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:12px;font-weight:500;cursor:pointer}
+.tag.mood{background:transparent;border-style:dashed}
+.tag:hover{border-color:var(--hi)}
+.seemore{font-size:13px;font-weight:600;color:var(--hi);cursor:pointer}
+.seemore:hover{text-decoration:underline;text-underline-offset:3px}

@@ -36,7 +36,7 @@ var Local=(function(){
     load:function(){
       var raw=ls.get(key());state={mine:{},profile:null};
       if(raw){try{state=JSON.parse(raw)}catch(e){}}
-      return Promise.resolve({tapes:null,mine:Object.keys(state.mine).map(function(k){var t=state.mine[k];return {id:t.id,title:t.name,owner:'me',songs:t.songs,updated:t.updatedAt||0}}),profile:state.profile,hot:null,djs:null,first:!raw});
+      return Promise.resolve({tapes:null,mine:Object.keys(state.mine).map(function(k){var t=state.mine[k];return {id:t.id,title:t.name,owner:'me',songs:t.songs,updated:t.updatedAt||0}}),profile:state.profile,hot:null,djs:null,likes:{},first:!raw});
     },
     saveTape:function(t){t.updatedAt=Date.now();state.mine[t.id]=t;flush();return Promise.resolve()},
     deleteTape:function(id){delete state.mine[id];flush();return Promise.resolve()},
@@ -111,8 +111,16 @@ var Fire=(function(){
         return Promise.all([
           F.getDocs(F.collection(db,'playlists')),
           F.getDoc(F.doc(db,'featured','home')),
-          F.getDoc(F.doc(db,'profiles',lo))
+          F.getDoc(F.doc(db,'profiles',lo)),
+          /* every profile, to count how many other DJs liked each MixTape; a failure only hides the counts */
+          F.getDocs(F.collection(db,'profiles')).catch(function(){return {docs:[]}})
         ]).then(function(r){
+          var likes={};
+          r[3].docs.forEach(function(d){
+            if(d.id===lo) return;
+            var l=d.data().likedMixtapes||[];
+            l.forEach(function(id,i){if(l.indexOf(id)===i)likes[id]=(likes[id]||0)+1});
+          });
           var tapes=r[0].docs.map(function(d){var v=d.data();return {id:d.id,title:v.name,owner:v.ownerName,songs:v.songs||[],updated:v.updatedAt||0,desc:v.description||''}});
           var feat=r[1].exists()?r[1].data():{};
           var names=feat.djsOnTheRise||[];
@@ -121,7 +129,7 @@ var Fire=(function(){
               return djView(n,z[0].exists()?z[0].data():null,z[1].exists()?z[1].data():null);
             });
           })).then(function(djs){
-            return {tapes:tapes,mine:null,profile:r[2].exists()?r[2].data():null,hot:feat.hotMixtapes||[],djs:djs};
+            return {tapes:tapes,mine:null,profile:r[2].exists()?r[2].data():null,hot:feat.hotMixtapes||[],djs:djs,likes:likes};
           });
         });
       });
