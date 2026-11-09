@@ -16,7 +16,7 @@ Do these in order. Nothing here needs a credit card.
    - Collection `usernames`, document ID `djdustin`: `name` (string) `DJDustin`, `protected` (boolean) true, `ownerUid` (string) the UID, `premium` (boolean) true.
    - Document ID `guestdj` in `usernames`: `name` `GuestDJ`, `protected` false, `premium` false.
 8. **Allow your site.** Authentication → Settings → Authorized domains → add `yourname.github.io`.
-9. **Make sure charts exist.** Actions → Refresh charts → Run workflow (see README).
+9. **Make sure charts exist.** Actions → Refresh charts → Run workflow (see README). The Music catalog panel at the top of `admin.html` shows the song count once it has run.
 10. **Load the starter data.** Open `https://yourname.github.io/yourrepo/admin.html`, enter the DJDustin password, click **Check setup**, then **Load starter data**. This creates the 37 starter DJs (locked to your admin account; 8 are premium), 200 premade MixTapes with real Apple songs, and the Home lists (6 Hot MixTapes, 8 DJs on the Rise).
 11. **Try it.** Open the site, sign in with a new name, like a MixTape, create one, reload.
 
