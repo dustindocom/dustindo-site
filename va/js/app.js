@@ -80,10 +80,12 @@ var RAW=[
 var SAMPLE=RAW.map(function(r,i){return {id:'p'+i,g:r[0],t:r[1],a:r[2],tone:TONE_G[r[0]],hot:100-((i*37)%61)}});
 var SONGS=SAMPLE.slice(),CAT={},CHARTS={all:[],byGenre:{},updated:null,live:false};
 SAMPLE.forEach(function(x){CAT[x.id]=x});
+/* songs on the starter MixTapes; previews are looked up on first play, like any saved song */
+VASeed.SONGS.forEach(function(s){if(!CAT[s.id])CAT[s.id]={id:s.id,t:s.t,a:s.a,g:s.g,art:s.art,tone:TONE_G[s.g]||'graphite',prev:'',url:''}});
 var SB=function(id){return CAT[id]};
 var sart=function(x){return x&&x.art?"background:url('"+x.art+"') center/cover no-repeat,"+art(x.tone||'graphite').slice(11):art(x?x.tone:'graphite')};
  
-var DJS=VASeed.DJS.slice();
+var DJS=VASeed.DJS.slice(), RISE=VASeed.RISE.slice();
 var DB=function(id){for(var i=0;i<DJS.length;i++)if(DJS[i].id===id)return DJS[i]};
  
 /* ---------- state ---------- */
@@ -136,12 +138,16 @@ function friendly(e){
 function applyLoad(r){
   var me=S.user.name.toLowerCase(), seedMine=[];
   if(r.tapes){
-    DJS=r.djs||[];
+    /* the database only sends the DJs on the Rise; keep every starter DJ so their tapes, pages and song limits still work */
+    var fd={},rd=r.djs||[];rd.forEach(function(d){fd[d.id]=d});
+    DJS=VASeed.DJS.map(function(d){var f=fd[d.id];return f?Object.assign({},d,f,{style:f.style||d.style}):d})
+      .concat(rd.filter(function(d){return !VASeed.DJS.some(function(x){return x.id===d.id})}));
+    RISE=rd.length?rd.map(function(d){return d.id}):VASeed.RISE.slice();
     S.tapes=r.tapes.map(function(t){return {id:t.id,title:t.title,owner:t.owner===me?'me':t.owner,songs:t.songs.map(unsnap),updated:t.updated||0,premade:!!DB(t.owner)}});
   }else{
-    DJS=VASeed.DJS.slice();
+    DJS=VASeed.DJS.slice();RISE=VASeed.RISE.slice();
     var mt=r.mine.map(function(t){return {id:t.id,title:t.title,owner:'me',songs:t.songs.map(unsnap),updated:t.updated}});
-    if(r.first&&!mt.length){mt=[VASeed.mine(SONGS,'m1','Late Night Drive',['elec','rnb'],8,2000),VASeed.mine(SONGS,'m2','Neo-Soul Sunday',['rnb','jazz'],7,1900)];seedMine=mt}
+    if(r.first&&!mt.length){mt=[VASeed.mine(SONGS,'m1','driving with no destination',['elec','rnb'],8,2000),VASeed.mine(SONGS,'m2','Sunday morning, no plans',['rnb','jazz'],7,1900)];seedMine=mt}
     S.tapes=VASeed.SPEC.map(function(sp,i){return VASeed.buildTape(sp,i,SONGS)}).concat(mt);
   }
   S.tapes.forEach(function(t){if(!t.genre){var f=t.songs.length&&SB(t.songs[0]);t.genre=f?f.g:'pop'}});
@@ -153,17 +159,26 @@ function applyLoad(r){
     var ai=AVPRESETS.map(function(a){return a.join(':')}).indexOf(pr.avatar);S.avatar=ai<0?0:ai;S.banner=pr.banner||0;
   }else if(!r.tapes){
     S.liked={};if(SONGS.length>3){S.liked[SONGS[1].id]=1;S.liked[SONGS[3].id]=1}
-    S.likedTapes=['t7','t8','t9','t10','t11','t12'];S.pinned=[];
+    S.likedTapes=VASeed.LIKED.slice();S.pinned=[];
     S.tapes.filter(function(t){return t.owner==='me'}).forEach(function(t){S.likedTapes.unshift(t.id);S.pinned.push(t.id)});
     S.avatar=0;S.banner=0;
     seedMine.forEach(persistTape);persistProfile();
   }else{S.liked={};S.likedTapes=[];S.pinned=[];S.avatar=0;S.banner=0}
   hydrate();
 }
-/* songs read from the database only carry names and artwork; fetch their preview links in one batch so tapping play works at once */
-function hydrate(){
-  var ids=Object.keys(CAT).filter(function(id){return !CAT[id].prev&&/^\d+$/.test(id)});
+/* songs read from the database (and the starter tapes) only carry names and artwork; fetch preview links in batches so tapping play works at once.
+   Only what's on screen is fetched: Home's tapes, Most Mixed, liked songs and your own tapes at start, and each tape's songs when it opens.
+   Fetching every known song would mean ~18 Apple requests per visit and run into its rate limit. */
+function hydrate(only){
+  var want=only;
+  if(!want){
+    want=[];
+    favTapes().concat(S.hot.map(tapeBy)).concat(S.tapes.filter(function(t){return t.owner==='me'})).forEach(function(t){if(t)want=want.concat(t.songs)});
+    want=want.concat(Object.keys(S.liked)).concat(mostMixed().slice(0,20).map(function(m){return m.id}));
+  }
+  var ids=want.filter(function(id,i){var c=CAT[id];return c&&!c.prev&&!c.asked&&/^\d+$/.test(id)&&want.indexOf(id)===i});
   if(!ids.length) return;
+  ids.forEach(function(id){CAT[id].asked=1});
   VAApi.lookupMany(ids).then(function(list){
     list.forEach(function(x){var c=CAT[x.id];if(c){c.prev=x.prev;c.url=x.url;if(x.art)c.art=x.art}});
     if(S.user)render({keep:1});
@@ -184,7 +199,7 @@ function favTapes(){
 function mostMixed(){
   var c={};
   S.tapes.forEach(function(t){t.songs.forEach(function(id){c[id]=(c[id]||0)+1})});
-  return Object.keys(c).map(function(k){return {id:k,n:c[k]}}).filter(function(m){return SB(m.id)}).sort(function(a,b){return b.n-a.n}).slice(0,5);
+  return Object.keys(c).map(function(k){return {id:k,n:c[k]}}).filter(function(m){return SB(m.id)}).sort(function(a,b){return b.n-a.n});
 }
 function songCount(id){var n=0;S.tapes.forEach(function(t){if(t.songs.indexOf(id)>=0)n++});return n}
 var curSong=function(){return S.playing?SB(S.playing.songId):null};
@@ -235,10 +250,11 @@ function viewHome(){
   }).join('');
   var mm=mostMixed();
   var mmList=mm.map(function(m){return m.id});
-  var mmRows=mm.map(function(m,i){return row(SB(m.id),{rank:i+1,key:'mm',list:mmList,sub:esc(SB(m.id).a)+' · In '+m.n+' MixTapes'})}).join('');
+  var mmCap=capped('mm',mm,5);
+  var mmRows=mmCap.items.map(function(m,i){return row(SB(m.id),{rank:i+1,key:'mm',list:mmList,sub:esc(SB(m.id).a)+' · In '+m.n+' MixTapes'})}).join('')+mmCap.btn;
   var hot=S.hot.filter(tapeBy).map(function(id){var t=tapeBy(id);
     return '<button class="hcard" data-a="tape:'+t.id+'"><div class="hcover" style="'+coverStyle(t)+'"><div class="chip">'+t.songs.length+' songs</div></div><div class="n ell">'+esc(t.title)+'</div><div class="b ell">'+esc(ownerName(t))+'</div></button>'}).join('');
-  var djs=DJS.map(function(d){return '<button class="dj" data-a="dj:'+d.id+'"><div class="c" style="'+AVK(d.av[0],d.av[1])+'"></div><div class="n ell">'+d.name+'</div><div class="s ell">'+d.style+'</div></button>'}).join('');
+  var djs=RISE.map(DB).filter(Boolean).map(function(d){return '<button class="dj" data-a="dj:'+d.id+'"><div class="c" style="'+AVK(d.av[0],d.av[1])+'"></div><div class="n ell">'+d.name+'</div><div class="s ell">'+d.style+'</div></button>'}).join('');
   return header()+
    '<section style="padding-top:14px"><div class="sh" style="align-items:center"><h2>'+(favs.length?'Favorite MixTapes':'Hot MixTapes')+'</h2><div class="cap" style="display:flex;align-items:center;gap:5px">'+ic('pin',14)+pinCount+' pinned · hold a tile to pin</div></div><div class="fgrid hs">'+tiles+'</div></section>'+
    '<section class="sec"><div class="sh"><h2>Hot MixTapes</h2><div class="cap">Picked by DJDustin</div></div>'+(hot?'<div class="hrow hs">'+hot+'</div>':'<div class="empty" style="padding:8px 20px">No Hot MixTapes yet. They appear here once the admin picks them.</div>')+'</section>'+
@@ -314,7 +330,7 @@ function viewCharts(){
     hotOnly?'What\'s hot right now'+(g==='all'?', across every genre':' in '+G[g]):
     'The most played '+(what||'songs')+(tag?' · '+tag:'')+(e==='classics'&&d==='any'?', before '+(CHARTS.eraCutoff||2000):e==='modern'&&d==='any'?', '+(CHARTS.eraCutoff||2000)+' and later':'');
   var src=CHARTS.live?'. '+(l==='alltime'||l==='repeat'||m!=='any'||st!=='any'?'Last.fm and Apple Music':'Apple Music')+', updated '+new Date(CHARTS.updated).toLocaleDateString()+'.':'. Sample data: the live chart did not load.';
-  var more=pool.length>n?'<div style="padding:14px 20px 24px;text-align:center"><button class="pill" data-a="cmore">Show more <span class="muted">('+(pool.length-n)+')</span></button></div>':'';
+  var more=pool.length>n?moreBtn('cmore',pool.length-n):'';
   var empty=!list.length?'<div class="empty"><b>No songs here yet</b>'+(L.desc?'This list fills in as the library is tagged every few hours. Try fewer filters.':'The library grows every few hours. Try another decade or genre.')+'</div>':'';
   return '<div class="pagehead"><h1>Charts</h1><p>'+esc(sub)+src+'</p></div>'+segL+segE+chipsD+chipsG+chipsS+chipsM+
    list.map(function(s,i){return row(s,{rank:i+1,key:'ch',list:ids,sub:L.note?esc(s.a)+' · '+esc(L.note(s)):null})}).join('')+empty+more;
@@ -391,22 +407,23 @@ function pickSuggestion(i){
 S.cs={items:null,loading:false,fail:false};
 function crateResults(){
   var q=S.crateQ.trim().toLowerCase();
-  if(!q) return '<div class="sh" style="padding-top:12px"><h2 style="font-size:15px">Browse the crate</h2><div class="cap">From the charts</div></div>'+rowsFor(SONGS.slice(0,12),'cr0');
+  if(!q) return '<div class="sh" style="padding-top:12px"><h2 style="font-size:15px">Browse the crate</h2><div class="cap">From the charts</div></div>'+rowsFor(SONGS,'cr0',12);
   if(S.cs.loading) return '<div class="empty">Searching Apple Music…</div>';
   if(S.cs.items){
     if(!S.cs.items.length) return '<div class="empty"><b>No songs found</b>Nothing matches "'+esc(S.crateQ)+'". Try an artist or a different spelling.</div>';
-    return '<div class="sh" style="padding-top:12px"><h2 style="font-size:15px">'+S.cs.items.length+' results</h2><div class="cap">Clean versions only</div></div>'+rowsFor(S.cs.items,'cr1');
+    return '<div class="sh" style="padding-top:12px"><h2 style="font-size:15px">'+S.cs.items.length+' results</h2><div class="cap">Clean versions only</div></div>'+rowsFor(S.cs.items,'cr1',15);
   }
   var res=SONGS.filter(function(x){return (x.t+' '+x.a+' '+G[x.g]).toLowerCase().indexOf(q)>=0});
   var note=S.cs.fail?'<div class="help" style="padding:10px 20px 0">Live search is unavailable right now. Showing songs from the charts.</div>':'';
   if(!res.length) return note+'<div class="empty"><b>No songs found</b>Nothing matches "'+esc(S.crateQ)+'".</div>';
-  return note+rowsFor(res,'cr1');
+  return note+rowsFor(res,'cr1',15);
 }
 var searchT=null;
 function crateUpdate(){var n=$('#cres');if(n)n.innerHTML=crateResults()}
 function crateSearchSoon(ms){
   clearTimeout(searchT);
   var q=S.crateQ.trim();
+  delete S.more.cr1;
   if(q.length<2){S.cs={items:null,loading:false,fail:false};crateUpdate();return}
   searchT=setTimeout(function(){
     S.cs={items:null,loading:true,fail:false};crateUpdate();
@@ -417,17 +434,29 @@ function crateSearchSoon(ms){
     }).catch(function(){ if(S.crateQ.trim()!==q) return; S.cs={items:null,loading:false,fail:true};crateUpdate(); });
   },ms);
 }
-function rowsFor(list,key){var ids=list.map(function(s){return s.id});return list.map(function(s){return row(s,{key:key,list:ids,pad:true})}).join('')}
+/* Rows for a song list. With a step, only the first batch shows, plus a Show more button; playback still runs through the whole list. */
+function rowsFor(list,key,step){
+  var ids=list.map(function(s){return s.id}),c=step?capped(key,list,step):{items:list,btn:''};
+  return c.items.map(function(s){return row(s,{key:key,list:ids,pad:true})}).join('')+c.btn;
+}
+/* Show more: S.more[key] is how many items a section has open. Each press opens one more step. */
+S.more={};
+function capped(key,list,step){
+  var n=S.more[key]||step;
+  return {items:list.slice(0,n),btn:list.length>n?moreBtn('showmore:'+key+':'+step,list.length-n):''};
+}
+function moreBtn(a,left){return '<div style="padding:14px 20px 24px;text-align:center"><button class="pill" data-a="'+a+'">Show more <span class="muted">('+left+')</span></button></div>'}
  
 function viewMe(){
   var mt=mineTapes();
   var body;
   if(S.meTab==='tapes'){
-    body='<div class="tgrid">'+mt.map(function(t){return '<button class="tg" data-a="tape:'+t.id+'"><div class="c" style="'+coverStyle(t)+'"></div><div class="n ell">'+esc(t.title)+'</div><div class="b">'+t.songs.length+'/'+limitOf(t)+' songs</div></button>'}).join('')+
-      '<div><button class="newt" data-a="newtape"><span>'+ic('plus',26)+'</span>New MixTape</button></div></div>';
+    var mtCap=capped('mine',mt,8);
+    body='<div class="tgrid">'+mtCap.items.map(function(t){return '<button class="tg" data-a="tape:'+t.id+'"><div class="c" style="'+coverStyle(t)+'"></div><div class="n ell">'+esc(t.title)+'</div><div class="b">'+t.songs.length+'/'+limitOf(t)+' songs</div></button>'}).join('')+
+      '<div><button class="newt" data-a="newtape"><span>'+ic('plus',26)+'</span>New MixTape</button></div></div>'+mtCap.btn;
   }else{
     var ls=Object.keys(S.liked).map(SB).filter(Boolean);
-    body=ls.length?rowsFor(ls,'liked'):'<div class="empty"><b>No liked songs yet</b>Tap the heart on any song to keep it here.</div>';
+    body=ls.length?rowsFor(ls,'liked',20):'<div class="empty"><b>No liked songs yet</b>Tap the heart on any song to keep it here.</div>';
   }
   var count=Object.keys(S.liked).length;
   return '<div class="banner" style="'+BANNERS[S.banner]()+'"><button class="gear" data-a="settings" aria-label="Settings">'+ic('gear',22)+'</button><div class="bavatar" style="'+meAv()+'"></div></div>'+
@@ -452,11 +481,11 @@ function viewTape(id){
 }
  
 function viewDj(id){
-  var d=DB(id)||{id:id,name:id,style:'',av:['graphite','dots']}, ts=S.tapes.filter(function(t){return t.owner===id});
+  var d=DB(id)||{id:id,name:id,style:'',av:['graphite','dots']}, ts=S.tapes.filter(function(t){return t.owner===id}), tc=capped('dj'+id,ts,8);
   return topbar('')+
    '<div style="text-align:center;padding:4px 20px 0"><div class="av" style="'+AVK(d.av[0],d.av[1])+';width:96px;height:96px;margin:0 auto"></div><h1 style="font-size:24px;font-weight:700;margin-top:12px">'+d.name+'</h1><div class="muted" style="font-size:14px;margin-top:2px">'+d.style+(d.premium?' · Premium · up to 20 songs':'')+'</div></div>'+
    '<div class="sh" style="padding-top:22px"><h2>MixTapes</h2><div class="cap">'+ts.length+'</div></div><div class="tgrid" style="padding-top:0">'+
-   ts.map(function(t){return '<button class="tg" data-a="tape:'+t.id+'"><div class="c" style="'+coverStyle(t)+'"></div><div class="n ell">'+esc(t.title)+'</div><div class="b">'+t.songs.length+' songs</div></button>'}).join('')+'</div>';
+   tc.items.map(function(t){return '<button class="tg" data-a="tape:'+t.id+'"><div class="c" style="'+coverStyle(t)+'"></div><div class="n ell">'+esc(t.title)+'</div><div class="b">'+t.songs.length+' songs</div></button>'}).join('')+'</div>'+tc.btn;
 }
  
 function viewSettings(){
@@ -918,7 +947,7 @@ function act(a,p,el,e){
       if(xSoundOn()){S.xMuted=true;xStop()}else{S.xMuted=false;xMusic(0)}
       xMuteBtn();break;
     case 'back': S.stack.pop();break;
-    case 'tape': go({type:'tape',id:p[0]});break;
+    case 'tape': var ht=tapeBy(p[0]);if(ht)hydrate(ht.songs);go({type:'tape',id:p[0]});break;
     case 'dj': go({type:'dj',id:p[0]});break;
     case 'settings': go({type:'settings'});break;
     case 'account': S.pop=!S.pop;break;
@@ -989,6 +1018,7 @@ function act(a,p,el,e){
     case 'ce': S.chartE=p[0];S.chartN=50;if(S.chartD!=='any'&&p[0]!=='all'&&decEra(S.chartD)!==p[0])S.chartD='any';break;
     case 'cd': S.chartD=p[0];S.chartN=50;if(p[0]!=='any'&&S.chartE!=='all'&&decEra(p[0])!==S.chartE)S.chartE=decEra(p[0]);break;
     case 'cmore': S.chartN+=50;break;
+    case 'showmore': S.more[p[0]]=(S.more[p[0]]||+p[1])+(+p[1]);break;
     case 'cq': S.crateQ=p.join(':');addRecent(S.crateQ);crateSearchSoon(0);break;
     case 'metab': S.meTab=p[0];break;
     case 'theme': S.vt=p[0];applyTheme();break;

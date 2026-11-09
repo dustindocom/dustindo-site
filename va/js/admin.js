@@ -28,18 +28,18 @@ $('#check').onclick=function(){run(function(){
   });
 })};
 
-function catalog(){
-  return fetch('data/charts.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error('data/charts.json not found. Run the Refresh charts workflow first.');return r.json()}).then(function(d){
-    if(!d.songs||d.songs.length<30)log('Only '+(d.songs||[]).length+' songs in charts.json. Tapes may repeat songs.','bad');
-    return d.songs;
-  });
-}
+/* starter tape ids, plus the 14 the old starter data used, so a re-seed or removal leaves nothing behind */
+var starterIds=function(){return VASeed.SPEC.map(function(sp){return sp[0]}).concat(VASeed.LEGACY).map(function(id){return 'premade-'+id})};
 
 $('#seed').onclick=function(){run(function(){
   var F=X.F,db=X.db,uid=X.auth.currentUser.uid,now=Date.now();
-  return catalog().then(function(songs){
+  var by={};VASeed.SONGS.forEach(function(s){by[s.id]=s});
+  return Promise.resolve().then(function(){
     var seq=Promise.resolve();
-    var step=function(msg,fn){seq=seq.then(fn).then(function(){log(msg,'ok')})};
+    var step=function(msg,fn){seq=seq.then(fn).then(function(){if(msg)log(msg,'ok')})};
+    step('Removed the old starter MixTapes',function(){
+      return Promise.all(VASeed.LEGACY.map(function(id){return F.deleteDoc(F.doc(db,'playlists','premade-'+id))}));
+    });
     VASeed.DJS.forEach(function(d){
       step('DJ '+d.name,function(){
         return F.setDoc(F.doc(db,'usernames',d.id),{name:d.name,protected:true,ownerUid:uid,premium:false,createdAt:now})
@@ -47,23 +47,24 @@ $('#seed').onclick=function(){run(function(){
           .then(function(){return F.setDoc(F.doc(db,'profiles',d.id),{avatar:d.av[0]+':'+d.av[1],banner:0,style:d.style,likedSongs:[],likedMixtapes:[],pinnedMixtapes:[],updatedAt:now})});
       });
     });
+    var n=VASeed.SPEC.length;
     VASeed.SPEC.forEach(function(sp,i){
-      var t=VASeed.buildTape(sp,i,songs), by={};songs.forEach(function(s){by[s.id]=s});
-      step('MixTape '+sp[1]+' ('+t.songs.length+' songs)',function(){
-        return F.setDoc(F.doc(db,'playlists','premade-'+sp[0]),{name:sp[1],description:'',ownerName:sp[2],createdAt:now-i,updatedAt:now-i,songs:t.songs.map(function(id){return snap(by[id])})});
+      var t=VASeed.buildTape(sp,i);
+      step((i+1)%25===0||i+1===n?'MixTapes '+(i+1)+' of '+n:'',function(){
+        return F.setDoc(F.doc(db,'playlists','premade-'+sp[0]),{name:sp[1],description:'',ownerName:sp[2],tags:t.tags,createdAt:now-i,updatedAt:now-i,songs:t.songs.map(function(id){return snap(by[id])})});
       });
     });
     step('Home lists',function(){
-      return F.setDoc(F.doc(db,'featured','home'),{hotMixtapes:VASeed.HOT.map(function(id){return 'premade-'+id}),djsOnTheRise:VASeed.DJS.map(function(d){return d.id}),updatedAt:now});
+      return F.setDoc(F.doc(db,'featured','home'),{hotMixtapes:VASeed.HOT.map(function(id){return 'premade-'+id}),djsOnTheRise:VASeed.RISE.slice(),updatedAt:now});
     });
     return seq.then(function(){log('Done. Open the site and look at Home.','ok')});
   });
 })};
 
 $('#unseed').onclick=function(){run(function(){
-  var F=X.F,db=X.db,ids=VASeed.SPEC.map(function(sp){return 'premade-'+sp[0]});
+  var F=X.F,db=X.db,ids=starterIds();
   return Promise.all(ids.map(function(id){return F.deleteDoc(F.doc(db,'playlists',id))})).then(function(){
     return F.setDoc(F.doc(db,'featured','home'),{hotMixtapes:[],djsOnTheRise:[]},{merge:true});
-  }).then(function(){log('Removed '+ids.length+' starter MixTapes and cleared the Home lists. DJ names were kept.','ok')});
+  }).then(function(){log('Removed the '+VASeed.SPEC.length+' starter MixTapes and cleared the Home lists. DJ names were kept.','ok')});
 })};
 })();
