@@ -69,7 +69,7 @@ const lastfm = async (q) => {
 /* ---------- genres, decades, song keys ---------- */
 const GMAP = [
   [/hip.?hop|rap/i, 'hip'], [/r&b|soul/i, 'rnb'], [/country|folk|americana|bluegrass/i, 'ctry'],
-  [/electronic|dance|house|techno|edm/i, 'elec'], [/latin|reggaeton|urbano|salsa|bachata/i, 'lat'],
+  [/electronic|dance(?!hall)|house|techno|edm/i, 'elec'], [/latin|reggaeton|urbano|salsa|bachata/i, 'lat'],
   [/jazz|funk|blues/i, 'jazz'], [/afro|reggae|dancehall|world/i, 'afro'], [/rock|alternative|metal|punk/i, 'rock'], [/pop|indie/i, 'pop'],
 ];
 const matchGenre = (n = '') => { for (const [re, k] of GMAP) if (re.test(n)) return k; return null; };
