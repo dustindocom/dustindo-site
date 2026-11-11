@@ -56,9 +56,8 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header">
   <nav class="site-nav" aria-label="Main">
-    <a class="brand" href="{{home}}" data-nav="home">
-      <img src="{{root}}assets/img/ddlogo.svg" width="44" height="44" alt="">
-      <span class="brand__text">Home</span>
+    <a class="brand" href="{{home}}" data-nav="home" aria-label="Home">
+      <img src="{{root}}assets/img/ddlogo.svg" width="95" height="40" alt="">
     </a>
     <ul class="site-nav__links">
       <li><a href="{{root}}works/" data-nav="works">Works</a></li>

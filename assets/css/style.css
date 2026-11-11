@@ -28,11 +28,12 @@
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --header-h: 74px;         /* height of the floating nav area */
+  --header-h: 70px;         /* height of the floating nav area */
   --tab-h: 40px;            /* height of a binder tab */
   --tab-overhang: 16px;     /* how far a tab sticker may hang above its tab; docked tabs sit this much lower so stickers clear the nav */
   --sticker-h: calc(var(--tab-h) * 1.7);   /* default height of a tab sticker (its width follows the image) */
-  --lip: 12px;              /* colored edge of each divider when closed */
+  --paper-opacity: 0;       /* paper texture on the homepage sheets: 0 = off. Set to .55 to bring it back */
+  --lip: 12px;            /* colored edge of each divider when closed */
   --ease: cubic-bezier(.22, .8, .2, 1);
 }
 
@@ -82,7 +83,7 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
   pointer-events: auto;
   max-width: var(--content); margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 8px 16px;
+  padding: 8px 20px;
   min-height: calc(var(--header-h) - 12px);
   border: 1px solid #fff;
   border-radius: 14px;
@@ -91,14 +92,13 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
   backdrop-filter: grayscale(82%);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; }
-.brand img { border-radius: 10px; }
+.brand img { display: block; height: 40px; width: auto; }
 .site-nav__links { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(14px, 3vw, 40px); }
 .site-nav__links a { text-decoration: none; padding: .5em .2em; font-weight: 500; border-bottom: 2px solid transparent; }
 .site-nav__links a:hover, .site-nav a[aria-current="page"] { border-bottom-color: var(--ink); }
 .brand[aria-current="page"] { border-bottom: 0; }
 @media (max-width: 480px) {
-  .brand__text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* logo only, still readable by screen readers */
-  .site-nav { padding: 6px 12px; }
+  .site-nav { padding: 8px 14px; }
 }
 
 /* ---------- home: pinned stage (hero + binder dividers) ----------
@@ -152,7 +152,7 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
   pointer-events: auto;
   background: var(--c);                             /* color stretches the full window width */
   border-top: 1px solid rgba(255, 255, 255, .5);
-  padding: var(--lip) 10vw 0;                       /* the colored edge you see when closed or docked */
+  padding: 0 10vw;                                  /* no top band: the paper runs right up to the edge */
   box-shadow: 0 -4px 10px rgba(43, 29, 20, .2);
 }
 .sheet::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 48px; background: var(--c); }   /* fills the corner the tilt would lift */
@@ -162,7 +162,7 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
 .tabrail {
   position: absolute; left: 0; right: 0; top: 0; z-index: 20; height: 0;
   max-width: var(--content); margin: 0 auto; padding: 0 var(--gutter);
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));   /* minmax(0, …) keeps the four slots equal even when a label is long */
   pointer-events: none;
 }
 .sheet__tab {
@@ -180,6 +180,13 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
   transition: translate .2s var(--ease), filter .2s;
 }
 .sheet__tab:hover { translate: 0 -3px; filter: brightness(1.06); }
+/* Tab label text: sized from the tab's own width (cqi = 1% of it), so it stays on one line at every window size. */
+.sheet__tab { container-type: inline-size; }
+.sheet__tab h2 {
+  margin: 0; padding: 0 4px;
+  font-size: clamp(.5rem, 13cqi, 1.4rem); line-height: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 /* The tab reaches a few pixels down into its divider's colored edge, so when the tab lifts 3px on hover
    there is no gap between the two. Keep this just a little more than the hover lift (3px): a longer reach
    shows as a lighter patch, because it sits above the shadow the next divider casts on this one. */
@@ -200,7 +207,10 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
   filter: drop-shadow(0 2px 2px rgba(43, 29, 20, .35));
   -webkit-user-drag: none; user-select: none; pointer-events: none;
 }
-#tab1 {  margin-top: 8px; position: absolute; 
+/* Tab one: wide PNG on desktop, sized from the tab's WIDTH so it scales with the window;
+   under 900px the <picture> in index.html falls back to tab-one.svg at the normal sticker size. */
+@media (min-width: 900px) {
+  #tab1 { width: 92%; height: auto; --sy: 0px; --sr: 0deg; }
 }
 #tab2 {  margin-top: 2px; position: absolute;
 }
@@ -230,13 +240,14 @@ site-header, site-footer { display: contents; }   /* shared parts injected by as
   position: relative;
   max-width: var(--content); margin: 0 auto;
   padding: clamp(20px, 3vw, 48px) var(--gutter);
+  padding-bottom: calc(var(--tab-h) + var(--tab-overhang) + clamp(20px, 3vw, 48px));   /* room for the next divider's tab (and its sticker), which rises over this edge */
   display: grid; gap: clamp(14px, 3vw, 48px); align-items: center;
 }
 /* paper texture sits on top of the color */
 .sheet__inner::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3;
   background-image: url("../img/paper.svg"); background-size: 480px 480px;
-  mix-blend-mode: multiply; opacity: .55;
+  mix-blend-mode: multiply; opacity: var(--paper-opacity);
 }
 .sheet__figure { margin: 0; position: relative; z-index: 1; aspect-ratio: 16 / 10; max-height: 60svh; width: 100%; border-radius: 6px; box-shadow: 0 10px 30px rgba(43, 29, 20, .3); }
 .sheet__figure .focal { border-radius: inherit; }
@@ -341,10 +352,10 @@ a.ddlinks { display: inline-block;
 
 /* ---------- landscape phones: short screens ---------- */
 @media (orientation: landscape) and (max-height: 500px) {
-  :root { --header-h: 56px; --tab-h: 32px; --lip: 8px; }
-  .brand img { width: 32px; height: 32px; }
+  :root { --header-h: 52px; --tab-h: 32px; --lip: 8px; }
+  .brand img { height: 32px; }
   .site-nav { padding: 4px 12px; }
-  .sheet__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 14px; padding-bottom: 14px; }
+  .sheet__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 14px; padding-bottom: calc(var(--tab-h) + var(--tab-overhang) + 14px); }
   .sheet__figure { max-height: 50svh; }
   .hero__text h1 { font-size: 2.2rem; }
 }
