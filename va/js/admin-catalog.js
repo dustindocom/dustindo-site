@@ -2,8 +2,8 @@
    workflow commits it there), or a local data/charts.json. Needs no sign-in and works with or without Firebase. */
 (function(){
 'use strict';
-var REPO='https://github.com/dustindocom/dustindo-site';
-var DATA_URL='https://raw.githubusercontent.com/dustindocom/dustindo-site/charts/charts.json', src='';
+var REPO='https://github.com/dustindocom/dustindocom.github.io';
+var DATA_URL='https://raw.githubusercontent.com/dustindocom/dustindocom.github.io/charts/charts.json', src='';
 var $=function(s){return document.querySelector(s)};
 var box=$('#catalog'), body=$('#catbody');
 var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
