@@ -4,7 +4,9 @@
 // charts.json is a growing library, not a snapshot. Each run:
 //   1. loads the previous charts.json, so no song is ever lost
 //   2. refreshes the hot chart from Apple's "most played" top 100 and logs each song's days on the chart
-//   3. crawls a batch of artists by decade and genre, so older music is in the mix, not just what charts now
+//   3. crawls a batch of artists: the hand-picked SEEDS by decade and genre, plus artists discovered from the hot
+//      chart, other countries' Apple charts, Last.fm top and similar artists, ListenBrainz and Billboard year-end lists.
+//      Billboard year-end Hot 100 songs (read from Wikipedia) are also added directly.
 //   4. with LASTFM_KEY: tags songs with a style and mood (see vocab.mjs), and records listeners and plays per listener
 //   5. counts karaoke and tribute versions of the biggest songs (a sign people love to sing them)
 //   6. scores the perennial lists: All-time, Evergreens, On repeat, Singalongs
@@ -12,7 +14,7 @@
 // When Apple has both a clean and an explicit version of a song, only the clean one is kept. Explicit songs carry e:1.
 //
 // Song fields: id t a art prev url | g genre, gn Apple genre name, st styles, md moods | y dec era | e explicit
-//   ls Last.fm listeners, rp plays per listener, kv karaoke/tribute versions, vn versions by the artist,
+//   ls Last.fm listeners, rp plays per listener, pc Last.fm total plays, pd plays per day since the last check, kv karaoke/tribute versions, vn versions by the artist,
 //   cd days on the hot chart, ce times it came back to the chart, ev evergreen score, r rank within its search
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -20,11 +22,23 @@ import { STYLES, mapTags, appVocab } from './vocab.mjs';
 
 const COUNTRY = process.env.CHART_COUNTRY || 'us';
 const LASTFM_KEY = process.env.LASTFM_KEY || '';
-const BUDGET = +process.env.CRAWL_BUDGET || 45; // artist searches per run (iTunes allows about 20 a minute)
+const BUDGET = +process.env.CRAWL_BUDGET || 80; // artist searches per run (iTunes allows about 20 a minute)
+// Apple "most played" charts from other countries. Their songs are looked up in the US store so they can play here.
+const FOREIGN = (process.env.CHART_COUNTRIES || 'gb,ca,au,ie,nz,mx,br,es,ar,co,cl,de,fr,it,nl,se,ng,za,gh,ke,jm,kr,jp,ph,in').split(',').filter((c) => c && c !== COUNTRY);
+// Priority: songs people know and recognize across the decades first, without ignoring what is hot now. So the
+// perennial sources (Billboard year-end, all-time listener lists, decade tags) get the bigger budgets and weights.
+const FOREIGN_PER_RUN = 4;
+const FOREIGN_REFRESH_DAYS = 7;
+const YEAR_END_BUDGET = +process.env.YEAR_END_BUDGET || 80; // iTunes searches per run for Billboard year-end hits
+const YEAR_END_FIRST = 1959; // the first Year-End Hot 100
+const SIMILAR_PER_RUN = 15; // Last.fm similar-artist lookups per run
+const DISCOVER_REFRESH_DAYS = 7; // Last.fm and ListenBrainz top lists
+const MAX_FOUND = 8000; // discovered artists kept in crawl.json
 const KV_BUDGET = +process.env.KV_BUDGET || 40; // karaoke searches per run
 const TRACK_BUDGET = +process.env.TRACK_BUDGET || 300; // Last.fm song lookups per run
 const ARTIST_TAG_BUDGET = 100;
-const LFM_TAGS_PER_RUN = 2;
+const LFM_TAGS_PER_RUN = 4;
+const LFM_TAG_TRACKS = 100; // top tracks read per Last.fm genre or decade tag
 const PER_ARTIST = 6;
 const PER_GENRE = 15;
 const RECRAWL_DAYS = 90; // an artist is searched again after this long
@@ -132,7 +146,7 @@ function groupByKey(results) {
 }
 
 /* ---------- the library ---------- */
-const CARRY = ['y', 'dec', 'era', 'gn', 'st', 'md', 'ls', 'rp', 'kv', 'vn', 'cd', 'ce'];
+const CARRY = ['y', 'dec', 'era', 'gn', 'st', 'md', 'ls', 'rp', 'pc', 'pd', 'kv', 'vn', 'cd', 'ce'];
 class Library {
   constructor(songs = []) {
     this.byId = new Map(); this.byKey = new Map(); this.alias = new Map(); this.added = 0;
@@ -300,6 +314,175 @@ function seedQueue() {
   return out;
 }
 
+/* ---------- 2a. discovered artists ---------- */
+// crawl.found[key] = { a: name, g: genre, s: { source: weight }, d: day last seen }. An artist's priority is the sum of
+// its source weights. Lasting popularity counts most: each Billboard year-end list an artist made, the all-time
+// listener lists and the decade tags. Today's charts still count, so hot new artists are not ignored.
+const W = { ye: 4, lb: 5, lbm: 2, lfm: 4, tag: 3, hot: 6, cc: 2, sim: 1 };
+const SEED_SCORE = 6;
+const seedKeys = new Set(Object.values(SEEDS).flatMap((l) => l.split('|').map((a) => nk(a))));
+const fscore = (f) => Object.values(f.s).reduce((a, b) => a + b, 0);
+function discover(crawl, name, src, w, g) {
+  const a = primaryArtist(name || '').trim(), k = nk(a);
+  if (!k || k.length < 2 || seedKeys.has(k) || /various artists|soundtrack|cast of|karaoke/i.test(a)) return;
+  const f = crawl.found[k] || (crawl.found[k] = { a, s: {} });
+  f.s[src] = w; f.d = TODAY;
+  if (g && !f.g) f.g = g;
+}
+function crawlQueue(crawl) {
+  const found = Object.entries(crawl.found).map(([k, f]) => ({ artist: f.a, g: f.g, id: '@' + k, score: fscore(f) }))
+    .sort((a, b) => b.score - a.score);
+  return { seeds: seedQueue(), found };
+}
+const isDue = (crawl) => (s) => TODAY - (crawl.seeds[s.id] ?? -1e9) >= RECRAWL_DAYS;
+// Three discovered artists for every hand-picked seed, best first; whichever list runs dry, the other fills the batch.
+function pickDue(crawl) {
+  const { seeds, found } = crawlQueue(crawl), due = isDue(crawl);
+  const a = found.filter(due), b = seeds.filter(due).map((s) => ({ ...s, score: SEED_SCORE })), out = [];
+  while (out.length < BUDGET && (a.length || b.length)) {
+    for (let i = 0; i < 3 && a.length && out.length < BUDGET; i++) out.push(a.shift());
+    if (b.length && out.length < BUDGET) out.push(b.shift());
+  }
+  return out;
+}
+function pruneFound(crawl) {
+  const ks = Object.keys(crawl.found);
+  if (ks.length <= MAX_FOUND) return;
+  ks.sort((x, y) => fscore(crawl.found[x]) - fscore(crawl.found[y]) || crawl.found[x].d - crawl.found[y].d)
+    .slice(0, ks.length - MAX_FOUND).forEach((k) => { delete crawl.found[k]; delete crawl.seeds['@' + k]; });
+}
+
+// Other countries' Apple charts: a few countries per run, each refreshed every few days. One feed read and one US-store
+// lookup per country. Songs not sold in the US store are skipped.
+async function foreignCharts(lib, crawl) {
+  const due = FOREIGN.filter((c) => TODAY - (crawl.cc[c] ?? -1e9) >= FOREIGN_REFRESH_DAYS)
+    .sort((a, b) => (crawl.cc[a] ?? -1e9) - (crawl.cc[b] ?? -1e9)).slice(0, FOREIGN_PER_RUN);
+  for (const c of due) {
+    try {
+      const feed = await J(`https://rss.marketingtools.apple.com/api/v2/${c}/music/most-played/100/songs.json`);
+      const ids = (feed.feed?.results || []).map((x) => String(x.id));
+      if (!ids.length) throw new Error('empty feed');
+      const d = await itunes(`lookup?country=${COUNTRY}&id=${ids.join(',')}`);
+      const before = lib.added;
+      let n = 0;
+      for (const r of (d.results || []).filter(usable)) {
+        n++;
+        discover(crawl, r.artistName, 'cc:' + c, W.cc, matchGenre(r.primaryGenreName));
+        if (clean(r)) lib.put(toSong(r, { r: 1 }));
+      }
+      crawl.cc[c] = TODAY;
+      console.log(`chart ${c}: ${n}/${ids.length} in the ${COUNTRY} store, +${lib.added - before} songs`);
+    } catch (e) {
+      console.warn(`chart ${c} failed:`, e.message);
+      if (e.status === 403 || e.status === 429) break;
+      crawl.cc[c] = TODAY - FOREIGN_REFRESH_DAYS + 1; // try again tomorrow
+    }
+  }
+}
+
+// Last.fm global top artists and tracks, top artists per genre and decade tag, and artists similar to the best-known ones.
+async function lastfmDiscover(crawl) {
+  if (TODAY - (crawl.disc.lfm ?? -1e9) >= DISCOVER_REFRESH_DAYS) {
+    try {
+      const a = await lastfm('method=chart.gettopartists&limit=300');
+      for (const x of a.artists?.artist || []) discover(crawl, x.name, 'lfm', W.lfm);
+      const t = await lastfm('method=chart.gettoptracks&limit=300');
+      for (const x of t.tracks?.track || []) discover(crawl, x.artist?.name, 'lfm', W.lfm);
+      for (const [g, tag] of [...Object.entries(TAGS), ...DECADE_TAGS.map((x) => [null, x])]) {
+        const d = await lastfm(`method=tag.gettopartists&tag=${encodeURIComponent(tag)}&limit=60`);
+        for (const x of d.topartists?.artist || []) discover(crawl, x.name, 'tag:' + tag, W.tag, g);
+      }
+      crawl.disc.lfm = TODAY;
+      console.log('Last.fm top artists: done');
+    } catch (e) { console.warn('Last.fm top artists failed:', e.message); }
+  }
+  // Similar artists, from seeds and well-scored discoveries not asked about in the last 180 days.
+  const from = [...seedKeys].map((k) => ({ k, score: SEED_SCORE }))
+    .concat(Object.entries(crawl.found).map(([k, f]) => ({ k, a: f.a, score: fscore(f) })).filter((x) => x.score >= 5))
+    .filter((x) => TODAY - (crawl.sim[x.k] ?? -1e9) >= RECRAWL_DAYS * 2)
+    .sort((a, b) => b.score - a.score).slice(0, SIMILAR_PER_RUN);
+  const names = new Map(Object.values(SEEDS).flatMap((l) => l.split('|')).map((a) => [nk(a), a]));
+  let n = 0;
+  for (const x of from) {
+    const name = x.a || names.get(x.k);
+    try {
+      const d = await lastfm(`method=artist.getsimilar&autocorrect=1&limit=10&artist=${encodeURIComponent(name)}`);
+      for (const s of d.similarartists?.artist || []) if (+s.match >= 0.3) { discover(crawl, s.name, 'sim', W.sim); n++; }
+    } catch (e) { if (!e.lfm) { console.warn('Last.fm similar stopped:', e.message); break; } }
+    crawl.sim[x.k] = TODAY;
+  }
+  if (from.length) console.log(`Last.fm similar: ${from.length} artists asked, ${n} similar found`);
+}
+
+// ListenBrainz sitewide top artists, all time and this month. Free, no key.
+async function listenbrainzDiscover(crawl) {
+  if (TODAY - (crawl.disc.lb ?? -1e9) < DISCOVER_REFRESH_DAYS) return;
+  try {
+    for (const [range, count, src] of [['all_time', 1000, 'lb'], ['month', 150, 'lbm']]) {
+      const d = await J(`https://api.listenbrainz.org/1/stats/sitewide/artists?count=${count}&range=${range}`);
+      for (const x of d.payload?.artists || []) discover(crawl, x.artist_name, src, W[src]);
+    }
+    crawl.disc.lb = TODAY;
+    console.log('ListenBrainz top artists: done');
+  } catch (e) { console.warn('ListenBrainz failed:', e.message); }
+}
+
+/* ---------- 2b. Billboard year-end Hot 100s, from Wikipedia ---------- */
+const unwiki = (s = '') => s.replace(/<ref[^>]*\/>|<ref[^>]*>[\s\S]*?<\/ref>/g, '').replace(/\{\{[^{}]*\}\}/g, '')
+  .replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, '$1').replace(/<[^>]+>/g, '').replace(/'{2,}/g, '')
+  .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+export function parseYearEnd(text) {
+  const out = [];
+  for (const row of text.split(/\n\|-/)) {
+    const flat = row.replace(/\[\[[^\]]*\]\]/g, (x) => x.replace(/\|/g, '¦')); // hide link pipes from the cell split
+    const m = /(?:^|\|)[ \t]*"([^"\n]+)"[ \t]*(?:\|\||\n\|)[ \t]*([^\n]*)/m.exec(flat);
+    if (!m) continue;
+    const fix = (s) => unwiki(s.replace(/¦/g, '|'));
+    const t = fix(m[1]), a = fix(m[2].split('||')[0].replace(/^\s*(?:rowspan|style|scope)[^|]*\|/, ''));
+    if (t && a && !/=/.test(t)) out.push({ t, a });
+  }
+  return out;
+}
+const wiki = (q) => J('https://en.wikipedia.org/w/api.php?format=json&formatversion=2&' + q);
+const yearEndPage = (y) => wiki('action=parse&prop=wikitext&page=' + encodeURIComponent(`Billboard Year-End Hot 100 singles of ${y}`))
+  .then((d) => d.parse?.wikitext || '');
+// One year at a time, decades mixed (1985, 1995, 2005... then 1986...). A year is done once every song on it has been
+// found in the library or looked up; an unfinished year carries on next run.
+async function yearEnd(lib, crawl) {
+  const years = [];
+  for (let y = YEAR_END_FIRST; y < THIS_YEAR; y++) years.push(y);
+  years.sort((a, b) => ((a + 5) % 10) - ((b + 5) % 10) || b - a);
+  let budget = YEAR_END_BUDGET, added = 0;
+  for (const y of years) {
+    if (budget <= 0) break;
+    if (crawl.ye[y] && TODAY - crawl.ye[y] < 365) continue;
+    let rows;
+    try { rows = parseYearEnd(await yearEndPage(y)); } catch (e) { console.warn(`Billboard ${y} failed:`, e.message); break; }
+    if (rows.length < 20) { crawl.ye[y] = TODAY; console.warn(`Billboard ${y}: no list found`); continue; }
+    let finished = true;
+    for (const [i, t] of rows.entries()) {
+      discover(crawl, t.a, 'ye:' + y, W.ye);
+      const k = keyOf(t.a, t.t);
+      if (lib.has(k) || crawl.miss[k]) continue;
+      if (budget-- <= 0) { finished = false; break; }
+      try {
+        const hit = await resolve(t);
+        if (!hit) { crawl.miss[k] = TODAY; continue; }
+        // A later year on the only version found is a reissue; the song was a hit in y.
+        const year = hit.y && hit.y <= y ? hit.y : y;
+        const before = lib.added;
+        lib.put(toSong(hit.r, { r: Math.min(9, Math.floor(i / 10)), y: year }));
+        added += lib.added - before;
+      } catch (e) {
+        if (e.status === 403 || e.status === 429) { finished = false; budget = 0; break; }
+      }
+    }
+    if (finished) crawl.ye[y] = TODAY;
+    console.log(`Billboard ${y}: ${rows.length} songs${finished ? '' : ' (continues next run)'}`);
+  }
+  console.log(`Billboard year-end: +${added} songs`);
+}
+
 async function crawlArtist(lib, seed) {
   const d = await itunes(`search?media=music&entity=song&attribute=artistTerm&country=${COUNTRY}&limit=50&term=${encodeURIComponent(seed.artist)}`);
   const mine = (d.results || []).filter((r) => usable(r) && byArtist(r.artistName, seed.artist));
@@ -310,7 +493,7 @@ async function crawlArtist(lib, seed) {
     const { r, y } = pickVersion(group);
     let year = y;
     // A greatest-hits or remaster date two or more decades after the artist's era is a reissue, not the original.
-    if (year && year >= decStart(seed.dec) + 20 && group.every((x) => COMPILATION.test(x.collectionName || ''))) year = 0;
+    if (year && seed.dec && year >= decStart(seed.dec) + 20 && group.every((x) => COMPILATION.test(x.collectionName || ''))) year = 0;
     const before = lib.added;
     // vn: how many releases of this song the artist has (album, singles, hits sets, live, remasters)
     lib.put(toSong(r, { g: seed.g, r: rank, y: year, dec: year ? null : seed.dec, vn: group.length }));
@@ -348,6 +531,12 @@ async function tagSongs(lib, hot, crawl) {
       const tr = d.track || {};
       const ls = +tr.listeners || 0, pc = +tr.playcount || 0;
       if (ls) { s.ls = ls; s.rp = Math.round((pc / ls) * 10) / 10; }
+      if (pc) {
+        // pd: plays per day since the last check, so a song's current pull can be compared with its lifetime total
+        const last = crawl.tg[lib.key(s)];
+        if (s.pc && last != null && TODAY > last && pc >= s.pc) s.pd = Math.round((pc - s.pc) / (TODAY - last));
+        s.pc = pc;
+      }
       const { st, md } = mapTags((tr.toptags?.tag || []).map((t) => t.name));
       if (md.length) s.md = md; else delete s.md;
       s.st = st.length ? st : (await artistStyles(s.a, crawl)) || s.st || [];
@@ -366,7 +555,7 @@ async function tagSongs(lib, hot, crawl) {
 
 // Last.fm genre and decade tag charts: finds well-loved songs the artist crawl missed, and feeds "hot in genre".
 async function resolve(t) {
-  const d = await itunes(`search?media=music&entity=song&country=${COUNTRY}&limit=10&term=${encodeURIComponent(t.a + ' ' + t.t)}`);
+  const d = await itunes(`search?media=music&entity=song&country=${COUNTRY}&limit=10&term=${encodeURIComponent(primaryArtist(t.a) + ' ' + baseTitle(t.t))}`);
   const want = keyOf(t.a, t.t);
   const group = (d.results || []).filter((r) => usable(r) && keyOf(r.artistName, r.trackName) === want);
   return group.some(clean) ? pickVersion(group) : null;
@@ -378,7 +567,7 @@ async function crawlLastfmTags(lib, crawl) {
   for (const { g, tag } of due) {
     const ids = [];
     try {
-      const d = await lastfm(`method=tag.gettoptracks&tag=${encodeURIComponent(tag)}&limit=40`);
+      const d = await lastfm(`method=tag.gettoptracks&tag=${encodeURIComponent(tag)}&limit=${LFM_TAG_TRACKS}`);
       const tracks = (d.tracks?.track || []).map((t) => ({ t: t.name, a: t.artist?.name || '' }));
       for (const [i, t] of tracks.entries()) {
         const k = keyOf(t.a, t.t);
@@ -445,7 +634,8 @@ const readJSON = async (name, fallback) => {
 
 export async function build() {
   const prev = await readJSON('charts.json', {});
-  const crawl = Object.assign({ seeds: {}, lfm: {}, miss: {}, hist: {}, tg: {}, art: {}, kvd: {} }, await readJSON('crawl.json', {}));
+  const crawl = Object.assign({ seeds: {}, lfm: {}, miss: {}, hist: {}, tg: {}, art: {}, kvd: {}, found: {}, cc: {}, disc: {}, sim: {}, ye: {} },
+    await readJSON('crawl.json', {}));
   const lib = new Library(prev.songs || []);
   console.log(`library: ${lib.byId.size} songs from the last run`);
 
@@ -457,13 +647,21 @@ export async function build() {
   }
   await backfillYears(lib).catch((e) => console.warn('Year backfill failed:', e.message));
 
-  const due = seedQueue().filter((s) => TODAY - (crawl.seeds[s.id] || -1e9) >= RECRAWL_DAYS).slice(0, BUDGET);
+  // Find artists the hand-picked seeds miss, then crawl the best of them alongside the seeds.
+  for (const id of hot) { const s = lib.byId.get(id); if (s) discover(crawl, s.a, 'hot', W.hot, s.g); }
+  await yearEnd(lib, crawl); // perennial hits first, while the iTunes budget is fresh
+  if (LASTFM_KEY) await lastfmDiscover(crawl);
+  await listenbrainzDiscover(crawl);
+  await foreignCharts(lib, crawl);
+  pruneFound(crawl);
+
+  const due = pickDue(crawl);
   let crawled = 0;
   for (const seed of due) {
     try {
       const n = await crawlArtist(lib, seed);
       crawl.seeds[seed.id] = TODAY; crawled++;
-      console.log(`  ${seed.dec} ${seed.g} ${seed.artist}: +${n}`);
+      console.log(`  ${seed.dec ? seed.dec + ' ' + seed.g : 'found (' + seed.score + ')'} ${seed.artist}: +${n}`);
     } catch (e) {
       console.warn(`  ${seed.artist} failed:`, e.message);
       if (e.status === 403 || e.status === 429) { console.warn('iTunes rate limit hit, stopping the crawl for this run'); break; }
@@ -501,10 +699,14 @@ export async function build() {
 
   console.log(`crawled ${crawled} artists, ${lib.added} new songs`);
   // For the admin page: how far through the artist list the crawl is, and whether Last.fm ran.
-  const queue = seedQueue();
+  const { seeds: sq, found: fq } = crawlQueue(crawl), done = (s) => !isDue(crawl)(s);
+  const src = {};
+  for (const f of Object.values(crawl.found)) for (const k of Object.keys(f.s)) { const g = k.split(':')[0]; src[g] = (src[g] || 0) + 1; }
   const status = {
-    artists: queue.length,
-    artistsDone: queue.filter((s) => TODAY - (crawl.seeds[s.id] ?? -1e9) < RECRAWL_DAYS).length,
+    artists: sq.length + fq.length,
+    artistsDone: sq.filter(done).length + fq.filter(done).length,
+    seeds: sq.length, found: fq.length, foundDone: fq.filter(done).length, sources: src,
+    countries: Object.keys(crawl.cc).length, years: Object.keys(crawl.ye).length,
     crawled, added: lib.added, lastfm: !!LASTFM_KEY, hotFresh,
   };
   return {

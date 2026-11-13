@@ -39,7 +39,12 @@ function render(d){
      '<div><b>'+n(c(function(s){return s.e}))+'</b><span>explicit</span></div></div>';
   if(st){
     h+='<h3>Artist crawl</h3><div class="bar wide"><span class="bt"><i style="width:'+pct(st.artistsDone,st.artists)+'%"></i></span><span class="bn">'+n(st.artistsDone)+' / '+n(st.artists)+'</span></div>'+
-       '<p class="note">Artists searched in the last 90 days. Each run searches up to 45 more.'+(st.hotFresh===false?' <span class="bad">The hot chart failed last run and was kept from before.</span>':'')+'</p>';
+       '<p class="note">Artists searched in the last 90 days. Each run searches up to 80 more.'+
+       (st.found!=null?' '+n(st.seeds)+' hand-picked, '+n(st.found)+' discovered ('+n(st.foundDone)+' searched so far)'+
+         (st.sources?': '+[['hot','US hot chart'],['cc','other countries’ charts'],['lfm','Last.fm top'],['tag','Last.fm genres'],['sim','Last.fm similar'],['lb','ListenBrainz all-time'],['lbm','ListenBrainz this month'],['ye','Billboard year-end']]
+           .filter(function(x){return st.sources[x[0]]}).map(function(x){return x[1]+' '+n(st.sources[x[0]])}).join(', '):'')+
+         '. '+n(st.countries||0)+' country charts read, '+n(st.years||0)+' Billboard years done.':'')+
+       (st.hotFresh===false?' <span class="bad">The hot chart failed last run and was kept from before.</span>':'')+'</p>';
   }
   h+='<h3>Tagging</h3>'+bars([['Style',tags.style],['Mood',tags.mood],['Listeners',tags.ls],['Evergreen',tags.ev]],S.length);
   if(noLfm)h+='<p class="note bad">Last.fm did not run, so styles, moods, All-time and On repeat are empty. Add a repo secret named <code>LASTFM_KEY</code> (<a href="'+REPO+'/settings/secrets/actions" target="_blank" rel="noopener">Secrets</a>).</p>';
