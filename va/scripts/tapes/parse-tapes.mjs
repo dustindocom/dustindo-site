@@ -16,14 +16,15 @@ for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.txt')).sort()) {
     else if (line.trim()) { const i = line.indexOf(' - '); cur.songs.push({ a: line.slice(0, i).trim(), t: line.slice(i + 3).trim() }); }
   }
 }
-const errs = [], old = new Set(D.T.map(t => t[1].toLowerCase()));
-const per = {}; D.T.forEach(t => per[t[2]] = (per[t[2]] || 0) + 1);
+const base = D.T.filter(t => +t[0].slice(2) <= 200); // the original starter tapes
+const errs = [], old = new Set(base.map(t => t[1].toLowerCase()));
+const per = {}; base.forEach(t => per[t[2]] = (per[t[2]] || 0) + 1);
 const nw = {};
 tapes.forEach((t, i) => {
   nw[t.owner] = (nw[t.owner] || 0) + 1;
   if (!(t.owner in prem)) errs.push(`#${i} unknown owner ${t.owner}`);
   const lim = prem[t.owner] ? 20 : 12;
-  if (t.songs.length > lim || t.songs.length < 7) errs.push(`#${i} ${t.owner} "${t.title}" has ${t.songs.length} songs (limit ${lim})`);
+  if (t.songs.length > lim + 4 || t.songs.length < 7) errs.push(`#${i} ${t.owner} "${t.title}" has ${t.songs.length} songs (limit ${lim}; up to 4 spares allowed, merge keeps the first ${lim} that match)`);
   t.tags.forEach(x => MOODS.includes(x) || errs.push(`#${i} bad tag ${x}`));
   if (!G.includes(t.genre)) errs.push(`#${i} bad genre ${t.genre}`);
   if (old.has(t.title.toLowerCase())) errs.push(`#${i} title already used: ${t.title}`);

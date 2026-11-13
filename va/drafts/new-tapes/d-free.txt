@@ -125,7 +125,7 @@ Will Smith - Just the Two of Us
 Kanye West - Hey Mama
 2Pac - Dear Mama
 Boyz II Men - A Song for Mama
-Tupac - Keep Ya Head Up
+2Pac - Keep Ya Head Up
 Notorious B.I.G. - Juicy
 Drake - Started From the Bottom
 J. Cole - No Role Modelz
@@ -190,6 +190,10 @@ Frank Ocean - Super Rich Kids
 Solange - Cranes in the Sky
 Noname - Diddy Bop
 Mac Miller - Weekend
+Lauryn Hill - Everything Is Everything
+Norah Jones - Don't Know Why
+The Roots - The Seed (2.0)
+Jill Scott - Golden
 
 # nina.ny | party | elec | Boiler Room in Bushwick
 Masters at Work - To Be in Love
@@ -500,7 +504,7 @@ Queen Latifah - U.N.I.T.Y.
 Heavy D & The Boyz - Now That We Found Love
 
 # tallguykev | summer | hip | windows down in the honda
-Will Smith - Summertime
+DJ Jazzy Jeff & The Fresh Prince - Summertime
 Warren G - Regulate
 Mary J. Blige - Real Love
 Ludacris - Roll Out (My Business)
@@ -612,7 +616,7 @@ Ini Kamoze - Here Comes the Hotstepper
 Shaggy - Boombastic
 Sean Paul - No Lie
 Wizkid - Ojuelegba
-Burna Boy - Ye
+Burna Boy - Ye (Yé)
 Koffee - Toast
 Rema - Calm Down
 
@@ -638,7 +642,7 @@ Prince - Let's Go Crazy
 Bobby Brown - Every Little Step
 Bell Biv DeVoe - Poison
 Outkast - Hey Ya!
-Bruno Mars - Uptown Funk
+Mark Ronson - Uptown Funk
 
 # deshawndidit | feel-good | hip | GOT THE PROMOTION, DRINKS ON ME
 The O'Jays - For the Love of Money
@@ -679,7 +683,7 @@ Daniel Caesar - Best Part
 # deshawndidit | summer | hip | 4TH OF JULY GRILL MASTER
 Kool & The Gang - Summer Madness
 The Isley Brothers - Summer Breeze
-Will Smith - Summertime
+DJ Jazzy Jeff & The Fresh Prince - Summertime
 Mary J. Blige - Real Love
 Nelly - Hot in Herre
 Kanye West - Gold Digger
@@ -698,6 +702,12 @@ Haruomi Hosono - Sports Men
 Yellow Magic Orchestra - Rydeen
 Yumi Arai - Hikoki Gumo
 Kirinji - Ame wo Miteita
+Casiopea - Asayake
+T-Square - Truth
+Ryuichi Sakamoto - Merry Christmas Mr. Lawrence
+Yellow Magic Orchestra - Firecracker
+Joe Hisaishi - One Summer's Day
+Toshiki Kadomatsu - Airport Lady
 
 # kenji.k | feel-good | pop | anime openings i still know by heart
 Yoko Takahashi - A Cruel Angel's Thesis
@@ -731,6 +741,10 @@ Yorushika - Itte
 Kenshi Yonezu - Lemon
 back number - Happy End
 Vaundy - Odoriko
+Joe Hisaishi - Merry-Go-Round of Life
+Hikaru Utada - Hikari
+Kenshi Yonezu - Uchiage Hanabi
+RADWIMPS - Sparkle
 
 # mo_rivera | party | lat | Quinceañera After-Party (Chambelanes Only)
 Elvis Crespo - Suavemente

@@ -32,7 +32,7 @@ Settings → Search controls it, saved per device:
 - Developer knobs live in `js/app.js`: `MINC` (characters before suggestions start, default 2) and the 160 ms delay in `suggestSoon`.
 
 ## Files
-- `index.html`, `css/app.css`, `js/app.js` (the app), `js/api.js` (Apple), `js/store.js` (Firebase or local), `js/seed-data.js` (starter DJs and Home lists), `js/seed-tapes.js` (the 200 starter MixTapes and their songs), `js/firebase-config.js` (your config)
+- `index.html`, `css/app.css`, `js/app.js` (the app), `js/api.js` (Apple), `js/store.js` (Firebase or local), `js/seed-data.js` (starter DJs and Home lists), `js/seed-tapes.js` (the 400 starter MixTapes and their songs; `scripts/tapes/` builds new ones from `drafts/new-tapes/`), `js/firebase-config.js` (your config)
 - `admin.html`, `js/admin.js` (check setup and load starter data), `js/admin-catalog.js` (Music catalog panel)
 - `scripts/build-charts.mjs`, `.github/workflows/charts.yml` (chart refresh, commits to the `charts` branch)
 - `scripts/get-data.mjs` (copies the `charts` branch data into `va/data/` for working offline)

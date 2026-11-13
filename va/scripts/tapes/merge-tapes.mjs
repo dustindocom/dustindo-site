@@ -11,6 +11,7 @@ const seedF = vaDir + '/js/seed-tapes.js';
 const src = fs.readFileSync(seedF, 'utf8');
 globalThis.window = {}; new Function(src)();
 const D = window.VASeedTapes;
+const prem = new Set([...fs.readFileSync(vaDir + '/js/seed-data.js', 'utf8').matchAll(/{id:"([^"]+)"[^}]*premium:true}/g)].map((x) => x[1]));
 const oldT = D.T.filter((t) => +t[0].slice(2) <= 200); // re-runnable: drop earlier merges
 const S = { ...D.S };
 const newT = [], dropped = [], draft = [];
@@ -21,6 +22,7 @@ tapes.forEach((tp, i) => {
     const r = cache[(s.a + '|' + s.t).toLowerCase()];
     if (!r) { dropped.push(`${id} ${s.a} - ${s.t}`); continue; }
     if (ids.includes(r.id)) continue;
+    if (ids.length >= (prem.has(tp.owner) ? 20 : 12)) break; // the app's per-tape limit
     ids.push(r.id);
     if (!S[r.id]) S[r.id] = [r.t, r.a, r.g, r.art];
   }
